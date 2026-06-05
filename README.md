@@ -1,404 +1,367 @@
-METRO ETHERNET MPLS LAB - README CHAY THU
-=========================================
+# Metro Ethernet Network Using MPLS
 
-Muc tieu lab
-------------
-Lab mo phong Metro Ethernet MAN su dung MPLS de ket noi 3 chi nhanh doanh
-nghiep qua ha tang ISP. Mo hinh gom:
+Lab mô phỏng mạng Metro Ethernet MAN sử dụng MPLS để kết nối 3 chi nhánh doanh nghiệp qua hạ tầng ISP. Project được xây dựng trên Mininet, FRR, MPLS Linux kernel, OVS và dashboard HTML để theo dõi kết quả kiểm thử.
 
-- ISP/MPLS backbone: PE1, PE2, PE3 va P1, P2, P3, P4.
-- Chi nhanh 1: Flat Network.
-- Chi nhanh 2: Core - Distribution - Access voi VLAN 10/20/30.
-- Chi nhanh 3: Leaf-Spine voi OSPF va ECMP.
-- Do hieu nang: throughput, delay, packet loss, jitter.
-- Dashboard HTML doc JSON tu mpls_results/latest.json.
+## Mục Tiêu
 
-============================================================
-1. GIAI NEN VA VAO THU MUC
-============================================================
+- Mô phỏng ISP/MPLS backbone gồm các router PE/P.
+- Kết nối 3 chi nhánh với 3 kiến trúc LAN khác nhau.
+- Kiểm chứng MPLS/LDP, OSPF, ECMP, VLAN, inter-VLAN routing và VPLS/L2VPN.
+- Đo hiệu năng mạng: throughput, delay, packet loss, jitter.
+- Sinh JSON kết quả và hiển thị bằng dashboard web.
+- So sánh MPLS label switching với IP routing baseline.
 
-unzip -o mpls_fixed_v20_dashboard_lock.zip
-cd mpls_fixed_v20_dashboard_lock
+## Kiến Trúc Mạng
 
-Neu thu muc cua ban co ten khac thi cd vao dung thu muc vua giai nen.
+| Khu vực | Thành phần | Mô tả |
+| --- | --- | --- |
+| ISP/MPLS Backbone | PE1, PE2, PE3, P1, P2, P3, P4 | Core MPLS dùng LDP/LFIB để chuyển tiếp nhãn |
+| Chi nhánh 1 | CE1, flat switch, host1..host4 | Flat Network, toàn bộ host cùng subnet |
+| Chi nhánh 2 | CE2, core/distribution/access switches | Mô hình 3 lớp, VLAN 10/20/30, inter-VLAN routing |
+| Chi nhánh 3 | CE3, spine/leaf switches | Leaf-Spine, OSPF underlay và ECMP |
+| Dashboard | `mpls_dashboard_tool.html` | Đọc JSON từ `mpls_results/latest.json` hoặc API local |
 
-============================================================
-2. CHAY SETUP LAN DAU
-============================================================
+## Cấu Trúc Project
 
+```text
+.
+├── topology.py                 # Dựng topology Mininet/MPLS/OVS/FRR
+├── runner.py                   # Bộ lệnh verify, runquick, runall, trace, dashboard
+├── analyze.py                  # Phân tích kết quả và sinh báo cáo
+├── branch1.py                  # Cấu hình Chi nhánh 1 - Flat Network
+├── branch2.py                  # Cấu hình Chi nhánh 2 - Core/Distribution/Access
+├── branch3.py                  # Cấu hình Chi nhánh 3 - Leaf-Spine
+├── mpls_dashboard_tool.html    # Dashboard web
+├── run_dashboard.py            # HTTP server/API cho dashboard
+├── network_design.json         # Metadata thiết kế mạng
+├── dashboard_data.json         # Dữ liệu mẫu cho dashboard
+├── setup.sh                    # Cài đặt môi trường lab
+└── README_RUN.txt              # Ghi chú chạy lab dạng text
+```
+
+## Yêu Cầu Môi Trường
+
+Khuyến nghị chạy trên Ubuntu hoặc WSL Ubuntu có quyền `sudo`.
+
+Cần có:
+
+- Python 3
+- Mininet
+- Open vSwitch
+- FRR/vtysh
+- iperf3
+- Linux MPLS kernel modules
+- Trình duyệt để mở dashboard
+
+Các thành phần này có thể được cài/cấu hình bằng script:
+
+```bash
 sudo bash setup.sh
+```
 
-setup.sh se cai/cau hinh cac thanh phan can thiet cho lab nhu Mininet, FRR,
-MPLS kernel modules, iperf3 va wrapper vtysh an toan.
+## Cách Chạy Nhanh
 
-============================================================
-3. DON MININET CU VA KHOI DONG TOPOLOGY
-============================================================
+1. Dọn Mininet cũ:
 
+```bash
 sudo mn -c
+```
+
+2. Khởi động topology:
+
+```bash
 sudo python3 topology.py
+```
 
-Sau khi topology khoi dong xong, ban se vao prompt:
+Sau khi chạy xong, terminal sẽ vào Mininet CLI:
 
+```text
 mininet>
+```
 
-============================================================
-4. CAC LENH CAN CHAY TRONG MININET CLI
-============================================================
+3. Kiểm tra nhanh topology:
 
-4.1. Xem danh sach tool ngan gon
----------------------------------
-
+```text
 verify
+```
 
-4.2. Chay kiem tra nhanh toan bo control-plane/data-plane
---------------------------------------------------------
+4. Sinh dữ liệu nhanh cho dashboard:
 
-verify
-
-4.3. Sinh JSON nhanh cho dashboard
-----------------------------------
-
+```text
 runquick
+```
 
-4.4. Chay bo do day du va so sanh MPLS/IP cho bao cao
-------------------------------------------------------
+5. Chạy bộ đo đầy đủ và so sánh MPLS/IP:
 
+```text
 runall
+```
 
-Lenh runall se chay day du bo test o MPLS mode, sau do tam thoi chuyen backbone sang IP routing baseline, chay lai cung bo test va gop ket qua vao cung mot file latest.json.
+`runall` sẽ chạy test ở MPLS mode, chuyển tạm sang IP routing baseline, chạy lại cùng bộ test, rồi gom kết quả vào một file JSON.
 
-Sau khi chay runquick hoac runall, cac file JSON chinh se duoc tao tai. Rieng runall se co them truong compare de dashboard hien tab So sanh MPLS/IP:
+## Dashboard
 
+Trong Mininet CLI, chạy:
+
+```text
+dash 8000
+```
+
+Sau đó mở trình duyệt:
+
+```text
+http://127.0.0.1:8000/mpls_dashboard_tool.html
+```
+
+Dashboard đọc dữ liệu từ các nguồn sau:
+
+```text
+/api/latest
 mpls_results/latest.json
 mpls_results/dashboard_data.json
 dashboard_data.json
+```
 
-============================================================
-5. MO DASHBOARD DUNG CACH
-============================================================
+Các file kết quả chính:
 
-Trong mininet>, chay:
+```text
+mpls_results/latest.json
+mpls_results/dashboard_data.json
+dashboard_data.json
+```
 
-dash 8000
+Lưu ý:
 
-Sau do mo trinh duyet:
+- Nên mở dashboard bằng URL `http://127.0.0.1:8000/...`, không nên mở bằng `file://` nếu muốn tự load JSON.
+- Dashboard không tự reload dữ liệu.
+- Sau khi chạy lại `runquick` hoặc `runall`, bấm **Nạp lại dữ liệu** trên dashboard.
+- Nếu muốn bỏ dữ liệu cũ trong trình duyệt, bấm **Xóa dữ liệu lưu**.
 
-http://127.0.0.1:8000/mpls_dashboard_tool.html
+API kiểm tra nhanh:
 
-Luu y quan trong:
-- Khong nen mo dashboard bang file:// neu muon tu doc JSON.
-- Ban nen mo bang http://127.0.0.1:8000/...
-- Ban v20 se tu restart port 8000 de tranh viec trinh duyet doc server cu.
-- Dashboard khong tu dong reload JSON.
-- Khi da load duoc 1 lan, dashboard giu nguyen du lieu do trong localStorage.
-- Neu muon cap nhat ket qua moi sau khi chay runall/runquick, bam "Nap lai du lieu".
-- Neu muon xoa du lieu cu da luu tren browser, bam "Xoa du lieu luu".
-
-Kiem tra API JSON truc tiep tren trinh duyet neu can:
-
+```text
 http://127.0.0.1:8000/api/files
 http://127.0.0.1:8000/api/latest
+```
 
-Neu /api/latest bao chua co result JSON, hay chay lai trong mininet>:
+## Lệnh Kiểm Chứng Quan Trọng
 
-runquick
+### MPLS / LDP / LFIB
 
-hoac:
-
-runall
-
-roi bam "Nap lai du lieu" tren dashboard.
-
-
-============================================================
-5.1. QUY UOC DAT TEN SUBNET BACKBONE
-============================================================
-
-Backbone su dung dai 10.255.x.0/30 cho cac lien ket point-to-point trong
-vung ISP/MPLS. Gia tri x la ma lien ket giua cac router, khong phai subnet
-ngau nhien.
-
-Quy uoc chung:
-- 10.0.11.0/30, 10.0.12.0/30, 10.0.13.0/30: cac lien ket CE-PE.
-- 10.255.11.0/30, 10.255.13.0/30, 10.255.23.0/30, ...: cac lien ket PE-P.
-- Cac lien ket P-P duoc dat sao cho khong trung voi cac lien ket PE-P.
-
-Mot so subnet P-P co dang dac biet de tranh trung:
-- 10.255.103.0/30: P1-P3. Khong dung 10.255.13.0/30 vi da dung cho PE1-P3.
-- 10.255.203.0/30: P2-P3. Khong dung 10.255.23.0/30 vi da dung cho PE2-P3.
-- 10.255.204.0/30: P2-P4. Khong dung 10.255.24.0/30 vi da dung cho PE2-P4.
-- 10.255.43.0/30: P3-P4. Khong dung 10.255.34.0/30 vi da dung cho PE3-P4,
-  nen dung ma dao 43 de tranh trung.
-
-Bang tom tat cac link backbone chinh:
-
-CE1-PE1  10.0.11.0/30
-CE2-PE2  10.0.12.0/30
-CE3-PE3  10.0.13.0/30
-PE1-P1   10.255.11.0/30
-P1-P2    10.255.12.0/30
-PE1-P3   10.255.13.0/30
-P1-P4    10.255.14.0/30
-PE2-P3   10.255.23.0/30
-PE2-P4   10.255.24.0/30
-PE3-P2   10.255.32.0/30
-PE3-P4   10.255.34.0/30
-P3-P4    10.255.43.0/30
-P1-P3    10.255.103.0/30
-P2-P3    10.255.203.0/30
-P2-P4    10.255.204.0/30
-
-Ghi chu: cac prefix 10.255.103/203/204/43 la co chu y de tranh trung prefix
-PE-P. Khong nen doi cac prefix nay neu khong dong bo lai topology.py, route
-va MPLS LFIB.
-
-============================================================
-6. LENH BAT BUOC THEO DE BAI / KIEM TRA CHINH
-============================================================
-
-6.1. Xem thong so dinh tuyen MPLS va LDP
-----------------------------------------
-
-Dang ngan gon khuyen dung:
-
+```text
 P1 v show mpls ldp binding
 P1 v show mpls ldp neighbor
 P1 ip -f mpls route
+```
 
-Dang day du tuong duong:
+Các lệnh này dùng để chứng minh router core có LDP binding, LDP neighbor và LFIB MPLS.
 
-P1 /tmp/frr-mpls-lab/P1/v show mpls ldp binding
-P1 /tmp/frr-mpls-lab/P1/v show mpls ldp neighbor
-P1 ip -f mpls route
+### OSPF Và ECMP Ở Chi Nhánh 3
 
-6.2. Xem thong so noi bo OSPF va ECMP Branch 3
-----------------------------------------------
-
-Dang ngan gon khuyen dung:
-
+```text
 spine1 v show ip ospf neighbor
 spine1 v show ip ospf route
 CE3 v show ip route
 spine1 ip route
+```
 
-Dang day du tuong duong:
+Trong output của `spine1 ip route`, các dòng có nhiều `nexthop ... weight 1` là bằng chứng ECMP.
 
-spine1 /tmp/frr-mpls-lab/spine1/v show ip ospf neighbor
-spine1 /tmp/frr-mpls-lab/spine1/v show ip ospf route
-CE3 /tmp/frr-mpls-lab/CE3/v show ip route
-spine1 ip route
+### VLAN Và Inter-VLAN Routing Ở Chi Nhánh 2
 
-Trong output cua spine1 ip route, cac dong co nhieu "nexthop ... weight 1"
-la bang chung ECMP.
-
-6.3. Kiem tra Branch 2 VLAN va inter-VLAN routing
--------------------------------------------------
-
-Lenh dung de xem subinterface VLAN tren CE2:
-
-CE2 sh -c "ip -brief addr show | grep ce2-lan"
-
-Khong dung lenh cu nay vi iproute2 se bao loi:
-
-CE2 ip -brief addr show ce2-lan.10 ce2-lan.20 ce2-lan.30
-
-Cac lenh Branch 2 can chay:
-
+```text
 CE2 sh -c "ip -brief addr show | grep ce2-lan"
 CE2 ip route
 CE2 v show ip route
 H2_1 ping -c 2 192.168.21.11
+```
 
-Dang day du tuong duong:
+Nếu `H2_1` ping được `192.168.21.11` với `0% packet loss`, inter-VLAN routing qua CE2 hoạt động đúng.
 
-CE2 sh -c "ip -brief addr show | grep ce2-lan"
-CE2 ip route
-CE2 /tmp/frr-mpls-lab/CE2/v show ip route
-H2_1 ping -c 2 192.168.21.11
+Không dùng lệnh sau vì `iproute2` có thể báo lỗi:
 
-Neu H2_1 ping duoc 192.168.21.11 voi 0% packet loss thi inter-VLAN routing
-qua CE2 da hoat dong.
+```text
+CE2 ip -brief addr show ce2-lan.10 ce2-lan.20 ce2-lan.30
+```
 
-6.4. Phan tich L2VPN / VPLS Backbone
-------------------------------------
+### VPLS / L2VPN
 
+```text
 PE1 ip link show type gretap
 PE1 bridge fdb show dev br-vpls
+```
 
-6.5. Kiem dinh VLAN va mang switch ao OVS
-----------------------------------------
+### OVS / VLAN
 
+```text
 core1 ovs-vsctl show
+```
 
-Output can thay cac bridge/port nhu core1, dist1, dist2, access1, access2,
-access3 va cac tag/trunks VLAN 10, 20, 30.
+Output cần thấy bridge/port của `core1`, `dist1`, `dist2`, `access1`, `access2`, `access3` và các VLAN 10, 20, 30.
 
-============================================================
-7. LENH NGOAI LE / HO TRO DEMO
-============================================================
+## Trace MPLS Và Hex Dump
 
-7.1. Trace duong MPLS mo phong label switching
-----------------------------------------------
+Dashboard có tab **Mô tả luồng di chuyển** để trình bày quá trình:
 
+- PUSH tại PE ingress.
+- SWAP/FORWARD tại P router trung gian.
+- PHP tại P router gần PE đích.
+- POP tại PE egress.
+- Đối chiếu bằng `tcpdump -XX`/hex dump trong JSON.
+
+Lệnh demo:
+
+```text
 trace H1_1 H2_1
 trace H1_1 H3_1
 trace H2_1 H3_5
+```
 
-7.2. Xem route tren cac node khac
----------------------------------
+Gợi ý luồng dễ thấy cả SWAP và PHP:
 
-route CE1
-route CE2
-route CE3
-iproute spine1
-mpls P1
-mpls PE1
+- Branch 1 -> Branch 3: `host1 -> web1`, đường `PE1 -> P1 -> P2 -> PE3`.
+- Branch 3 -> Branch 1: `web1 -> host1`, đường `PE3 -> P2 -> P1 -> PE1`.
 
-7.3. Test ping nhanh
---------------------
+Cách đọc nhanh:
 
-H1_1 ping -c 2 H2_1
-H1_1 ping -c 2 H3_1
-H2_1 ping -c 2 H3_5
-H3_1 ping -c 2 H3_5
+- `0x8847`: EtherType MPLS.
+- `16001/16002/16003`: transport label theo PE đích.
+- `101/201/301`: service label theo chi nhánh đích.
+- Sau PHP, outer transport label thường biến mất.
+- Sau POP tại PE egress, frame ra CE trở lại IPv4/ICMP.
 
-7.4. Dashboard helper
----------------------
+## Quy Ước Subnet Backbone
 
-dash 8000
-dashstop
-dashboard
-json
+Backbone sử dụng dải `10.255.x.0/30` cho các liên kết point-to-point trong vùng ISP/MPLS. Giá trị `x` là mã liên kết giữa router.
 
-============================================================
-8. QUY TRINH KHUYEN NGHI DE BAO CAO
-============================================================
+| Link | Subnet |
+| --- | --- |
+| CE1-PE1 | `10.0.11.0/30` |
+| CE2-PE2 | `10.0.12.0/30` |
+| CE3-PE3 | `10.0.13.0/30` |
+| PE1-P1 | `10.255.11.0/30` |
+| P1-P2 | `10.255.12.0/30` |
+| PE1-P3 | `10.255.13.0/30` |
+| P1-P4 | `10.255.14.0/30` |
+| PE2-P3 | `10.255.23.0/30` |
+| PE2-P4 | `10.255.24.0/30` |
+| PE3-P2 | `10.255.32.0/30` |
+| PE3-P4 | `10.255.34.0/30` |
+| P3-P4 | `10.255.43.0/30` |
+| P1-P3 | `10.255.103.0/30` |
+| P2-P3 | `10.255.203.0/30` |
+| P2-P4 | `10.255.204.0/30` |
 
-Buoc 1: Khoi dong topology
+Các prefix `10.255.103.0/30`, `10.255.203.0/30`, `10.255.204.0/30` và `10.255.43.0/30` được đặt có chủ ý để tránh trùng prefix PE-P. Không nên đổi nếu chưa đồng bộ lại `topology.py`, route và MPLS LFIB.
 
+## Quy Trình Khuyến Nghị Khi Báo Cáo
+
+1. Khởi động topology:
+
+```bash
 sudo mn -c
 sudo python3 topology.py
+```
 
-Buoc 2: Trong mininet>, kiem tra nhanh
+2. Trong Mininet CLI, kiểm tra nhanh:
 
+```text
 verify
-verify
+```
 
-Buoc 3: Tao du lieu dashboard
+3. Chạy đầy đủ bộ đo:
 
+```text
 runall
+```
 
-Buoc 4: Mo dashboard
+4. Mở dashboard:
 
+```text
 dash 8000
+```
 
-Mo trinh duyet:
+5. Truy cập:
 
+```text
 http://127.0.0.1:8000/mpls_dashboard_tool.html
+```
 
-Buoc 5: Tren dashboard bam "Nap lai du lieu" de doc latest JSON.
+6. Bấm **Nạp lại dữ liệu** và chụp các tab:
 
-Buoc 6: Kiem tra cac tab:
-
-- Tong quan
-- Thiet ke chi nhanh
-- Kiem chung yeu cau
-- Ket qua & bieu do
-- So sanh MPLS/IP
+- Tổng quan
+- Thiết kế chi nhánh
+- Kiểm chứng yêu cầu
+- Kết quả & biểu đồ
+- So sánh MPLS/IP
+- Mô tả luồng di chuyển
 - MPLS / OSPF / VPLS
 
-============================================================
-9. XU LY LOI DASHBOARD KHONG LOAD SO LIEU
-============================================================
+## Xử Lý Lỗi Thường Gặp
 
-Neu dashboard hien design_only, no timestamp, N/A:
+### Dashboard hiện N/A hoặc chưa có dữ liệu
 
-1. Dam bao da chay trong mininet>:
+Chạy lại trong Mininet CLI:
 
+```text
 runquick
+```
 
-hoac:
+hoặc:
 
+```text
 runall
+```
 
-2. Kiem tra file result co ton tai khong:
+Sau đó bấm **Nạp lại dữ liệu** trên dashboard.
 
+### Không thấy result JSON
+
+Kiểm tra file:
+
+```text
 sh ls -l mpls_results/latest.json dashboard_data.json
+```
 
-3. Restart dashboard server:
+Kiểm tra API:
 
-dash 8000
-
-Ban v20 se tu kill server cu tren port 8000 roi start lai.
-
-4. Mo URL debug:
-
+```text
 http://127.0.0.1:8000/api/files
+```
 
-Trong api/files, latest_candidates phai co:
+Trong `/api/files`, `latest_candidates` nên có:
 
+```text
 mpls_results/latest.json
+```
 
-5. Quay lai dashboard va bam:
+### Dashboard vẫn đọc dữ liệu cũ
 
-Nap lai du lieu
+1. Bấm **Xóa dữ liệu lưu**.
+2. Chạy lại:
 
-Neu van khong duoc, chon JSON thu cong:
-
-mpls_results/latest.json
-
-============================================================
-10. THOAT LAB
-============================================================
-
-Trong mininet>:
-
-exit
-
-Sau do tren terminal Ubuntu:
-
-sudo mn -c
-
-============================================================
-9. MINH CHUNG PUSH/SWAP/PHP/POP BANG TCPDUMP HEX DUMP
-============================================================
-
-Ban nay co them tab dashboard: "Mo ta luong di chuyen".
-
-Cach chay de co minh chung:
-
-1) Trong Mininet CLI, chay nhanh:
-
-runquick
-
-Hoac chay day du cho bao cao:
-
-runall
-
-2) Mo dashboard:
-
+```text
 dash 8000
-http://127.0.0.1:8000/mpls_dashboard_tool.html
+```
 
-3) Bam "Nap lai du lieu".
+3. Mở lại dashboard và bấm **Nạp lại dữ liệu**.
 
-4) Vao tab "Mo ta luong di chuyen", chon Branch nguon va Branch dich.
-Dashboard se hien:
-- Luong di chuyen qua CE/PE/P.
-- PUSH tai PE ingress.
-- SWAP/FORWARD tai P trung gian neu duong co nhieu P-hop.
-- PHP tai P gan PE dich.
-- POP tai PE egress.
-- Tcpdump -XX / Hex Dump da duoc runner.py chup san va luu trong latest.json.
+## Thoát Lab
 
-Goi y demo de thay ro ca SWAP va PHP:
-- Branch 1 -> Branch 3: host1 -> web1, duong PE1 -> P1 -> P2 -> PE3.
-- Branch 3 -> Branch 1: web1 -> host1, duong PE3 -> P2 -> P1 -> PE1.
+Trong Mininet CLI:
 
-Cach doc bang chung:
-- EtherType 0x8847: frame MPLS.
-- Label 16001/16002/16003: transport label theo PE dich.
-- Label 101/201/301: service label theo chi nhanh dich.
-- Sau PHP, outer transport label bien mat, thuong chi con service label.
-- Sau POP tai PE egress, frame ra CE tro lai IPv4/ICMP va khong con MPLS.
+```text
+exit
+```
+
+Sau đó dọn Mininet:
+
+```bash
+sudo mn -c
+```
+
+## Ghi Chú
+
+- Các file trong `mpls_results/` là output sinh tự động sau khi chạy lab.
+- `dashboard_data.json` ở thư mục gốc được dùng như dữ liệu mẫu để dashboard có thể demo nhanh.
+- Nếu thay đổi subnet backbone, cần đồng bộ trong topology, route, LFIB/MPLS và dashboard metadata.
