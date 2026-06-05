@@ -1,0 +1,3215 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Metro Ethernet MPLS Dashboard</title>
+    <style>
+      :root {
+        --bg: #f4f7fb;
+        --card: #fff;
+        --panel: #fbfcff;
+        --border: #dbe4ef;
+        --text: #0f172a;
+        --muted: #64748b;
+        --blue: #2563eb;
+        --blue-soft: #dbeafe;
+        --green: #16a34a;
+        --green-soft: #dcfce7;
+        --orange: #ea580c;
+        --orange-soft: #ffedd5;
+        --purple: #7c3aed;
+        --purple-soft: #ede9fe;
+        --gray-soft: #f8fafc;
+        --shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        padding: 24px 32px 22px;
+        background: #172033;
+        color: #fff;
+        border-bottom: 4px solid #38bdf8;
+        box-shadow: 0 8px 22px rgba(2, 8, 23, 0.14);
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        line-height: 1.15;
+        letter-spacing: 0;
+      }
+      h2 {
+        font-size: 20px;
+        line-height: 1.25;
+        color: #172033;
+      }
+      h3 {
+        font-size: 16px;
+        line-height: 1.3;
+        color: #1e293b;
+      }
+      .subtitle {
+        max-width: 1120px;
+        color: #dbeafe;
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-top: 16px;
+      }
+      button,
+      .btn {
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: none;
+        transition:
+          background 0.15s ease,
+          border-color 0.15s ease,
+          transform 0.15s ease;
+      }
+      button:hover,
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+      button.primary {
+        background: #0f172a;
+        color: #fff;
+        border-color: #334155;
+      }
+      .btn.light,
+      button.light {
+        background: #fff;
+        color: #111827;
+        border-color: #dbe4ef;
+      }
+      .btn.ghost,
+      button.ghost {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.28);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        background: #e2e8f0;
+        color: #0f172a;
+        line-height: 1.25;
+      }
+      .pill.ok {
+        background: var(--green-soft);
+        color: #166534;
+      }
+      .pill.warn {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .pill.fail {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .pill.blue {
+        background: var(--blue-soft);
+        color: #1d4ed8;
+      }
+      .pill.purple {
+        background: var(--purple-soft);
+        color: #6d28d9;
+      }
+      main {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 22px;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+        min-width: 0;
+      }
+      .grid.cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .grid.cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      #reqList {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1fr;
+        min-width: 0;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        padding: 18px;
+      }
+      .section-card {
+        padding: 20px;
+      }
+      .section-title {
+        margin: 0 0 10px;
+      }
+      .metric {
+        min-width: 0;
+        min-height: 92px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .metric .label {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        overflow-wrap: break-word;
+        word-break: break-word;
+      }
+      .metric .value {
+        font-size: 22px;
+        font-weight: 850;
+        margin-top: 8px;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.2;
+      }
+      .small {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 16px 0;
+      }
+      .tabbar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 18px 0 14px;
+        padding: 10px;
+        background: rgba(244, 247, 251, 0.92);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .tab {
+        padding: 9px 13px;
+        border-radius: 7px;
+        background: #eef2f7;
+        color: #334155;
+        font-weight: 800;
+        cursor: pointer;
+        border: 1px solid transparent;
+      }
+      .tab.active {
+        background: #172033;
+        color: #fff;
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .chip-list,
+      .branch-tags,
+      .legend {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .req-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        max-width: 100%;
+        overflow-wrap: break-word;
+      }
+      .kbd {
+        display: inline-flex;
+        padding: 5px 9px;
+        border-radius: 6px;
+        background: #f8fafc;
+        border: 1px solid #cfd8e3;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        max-width: 100%;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        align-items: center;
+        white-space: pre-wrap;
+      }
+      .callout {
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        background: var(--gray-soft);
+        border-radius: 8px;
+        line-height: 1.55;
+      }
+      .table-wrap {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 620px;
+      }
+      th,
+      td {
+        border-bottom: 1px solid #e5edf6;
+        padding: 10px 12px;
+        text-align: left;
+        font-size: 13px;
+        vertical-align: top;
+        line-height: 1.4;
+      }
+      th {
+        background: #f8fbff;
+        color: #334155;
+        font-weight: 850;
+        white-space: nowrap;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .list {
+        margin: 8px 0 0 18px;
+        padding: 0;
+      }
+      .list li {
+        margin-bottom: 5px;
+      }
+      .svgwrap {
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #f8fbff;
+        padding: 8px;
+      }
+      .branch-card,
+      .req-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        background: var(--panel);
+        overflow: hidden;
+        min-width: 0;
+      }
+      .check-head {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        min-width: 0;
+      }
+      .check-title {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        min-width: 0;
+      }
+      .check-summary {
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #f8fbff;
+        border: 1px solid var(--border);
+        margin-bottom: 14px;
+        overflow: hidden;
+      }
+      .proof-details {
+        margin-top: 12px;
+      }
+      .proof-details summary {
+        cursor: pointer;
+        font-weight: 800;
+        color: #334155;
+      }
+      .proof-output {
+        margin-top: 8px;
+        max-height: 260px;
+        font-size: 12px;
+        overflow-x: auto;
+        overflow-wrap: break-word;
+        word-break: break-word;
+      }
+      .req-card h3,
+      .branch-card h3 {
+        margin: 0 0 8px;
+      }
+      .result-note {
+        padding: 14px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        background: #fafcff;
+        color: #475569;
+        line-height: 1.5;
+      }
+      .chart {
+        min-height: 260px;
+      }
+      .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .chart-box {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        background: #fff;
+      }
+      .chart-box h3 {
+        margin-top: 0;
+      }
+      pre {
+        background: #0b1220;
+        color: #dbeafe;
+        padding: 14px;
+        border-radius: 8px;
+        border: 1px solid #1f2b3d;
+        overflow: auto;
+        max-height: 420px;
+        white-space: pre-wrap;
+        line-height: 1.45;
+      }
+      .legend span {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        color: #334155;
+        font-size: 13px;
+      }
+      .line {
+        display: inline-block;
+        width: 22px;
+        height: 0;
+        border-top: 3px solid #64748b;
+      }
+      .line.blue {
+        border-top-color: #2563eb;
+      }
+      .line.green {
+        border-top-color: #16a34a;
+      }
+      .line.orange {
+        border-top-color: #ea580c;
+      }
+      .line.dashed {
+        border-top-style: dashed;
+      }
+
+      .design-layout {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 14px;
+      }
+      .design-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        background: #fff;
+        box-shadow: 0 5px 14px rgba(15, 23, 42, 0.05);
+      }
+      .design-card.wide {
+        grid-column: 1/-1;
+      }
+      .design-card h3 {
+        margin: 0 0 8px;
+        font-size: 20px;
+        color: #1f2f4a;
+      }
+      .design-card h4 {
+        margin: 14px 0 8px;
+        font-size: 15px;
+        color: #334155;
+      }
+      .design-split {
+        display: grid;
+        grid-template-columns: minmax(360px, 0.95fr) minmax(360px, 1.05fr);
+        gap: 14px;
+        align-items: start;
+      }
+      .mini-topology {
+        overflow: auto;
+        border: 1px solid #dbe5f0;
+        border-radius: 8px;
+        background: #f8fbff;
+        padding: 8px;
+      }
+      .mini-svg {
+        min-width: 520px;
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .mini-svg .box {
+        fill: #fff;
+        stroke: #cbd5e1;
+        stroke-width: 2;
+      }
+      .mini-svg .cloud {
+        fill: #dbeafe;
+        stroke: #2563eb;
+        stroke-width: 2;
+      }
+      .mini-svg .router {
+        fill: #0284c7;
+        stroke: #fff;
+        stroke-width: 3;
+      }
+      .mini-svg .routerEdge {
+        fill: #0ea5e9;
+        stroke: #fff;
+        stroke-width: 3;
+      }
+      .mini-svg .sw {
+        fill: #eff6ff;
+        stroke: #0284c7;
+        stroke-width: 2;
+      }
+      .mini-svg .swOrange {
+        fill: #ffedd5;
+        stroke: #ea580c;
+        stroke-width: 2;
+      }
+      .mini-svg .swGreen {
+        fill: #dcfce7;
+        stroke: #16a34a;
+        stroke-width: 2;
+      }
+      .mini-svg .host {
+        fill: #fff;
+        stroke: #64748b;
+        stroke-width: 1.5;
+      }
+      .mini-svg .link {
+        stroke: #334155;
+        stroke-width: 2.2;
+        fill: none;
+        stroke-linecap: round;
+      }
+      .mini-svg .bb {
+        stroke: #2563eb;
+        stroke-width: 2.8;
+        fill: none;
+        stroke-linecap: round;
+      }
+      .mini-svg .vlan {
+        stroke: #ea580c;
+        stroke-width: 2;
+        fill: none;
+        stroke-dasharray: 7 5;
+        stroke-linecap: round;
+      }
+      .mini-svg .ospf {
+        stroke: #16a34a;
+        stroke-width: 2.2;
+        fill: none;
+        stroke-dasharray: 7 5;
+        stroke-linecap: round;
+      }
+      .mini-svg text {
+        font-family:
+          Inter,
+          Segoe UI,
+          Arial,
+          sans-serif;
+      }
+      .mini-title {
+        font-weight: 900;
+        font-size: 18px;
+        fill: #172554;
+      }
+      .mini-label {
+        font-weight: 800;
+        font-size: 12px;
+        fill: #0f172a;
+      }
+      .mini-small {
+        font-weight: 700;
+        font-size: 11px;
+        fill: #475569;
+      }
+      .ip-plan {
+        margin-top: 16px;
+      }
+      .ip-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .ip-card {
+        border: 1px solid #d7dfeb;
+        border-radius: 8px;
+        background: #fff;
+        padding: 14px;
+        box-shadow: 0 5px 14px rgba(23, 43, 77, 0.05);
+      }
+      .ip-card h4 {
+        margin: 0 0 10px;
+        font-size: 16px;
+        color: #20324d;
+      }
+      .ip-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .ip-table th,
+      .ip-table td {
+        border-bottom: 1px solid #e7edf6;
+        padding: 7px 8px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .ip-table th {
+        color: #4c5d78;
+        font-weight: 800;
+        background: #f7faff;
+      }
+      .routing-list {
+        margin: 8px 0 0 18px;
+        padding: 0;
+      }
+      .routing-list li {
+        margin: 5px 0;
+        color: #334155;
+      }
+      .compare-block {
+        display: grid;
+        gap: 18px;
+        max-width: 100%;
+        overflow: hidden;
+      }
+      .table-wrap table {
+        width: 100%;
+        margin: 0;
+      }
+      .kv-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 12px;
+        margin-top: 8px;
+        max-width: 100%;
+      }
+      .kv-item {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 8px;
+        padding: 12px 14px;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .kv-key {
+        display: block;
+        font-size: 12px;
+        color: #64748b;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .kv-value {
+        display: block;
+        margin-top: 5px;
+        font-size: 15px;
+        font-weight: 800;
+        color: #172033;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        line-height: 1.35;
+      }
+      .compare-note {
+        margin: 0;
+      }
+      .compare-empty {
+        padding: 12px 14px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        background: #fafcff;
+        color: #475569;
+      }
+
+      .flow-controls {
+        display: flex;
+        gap: 10px;
+        align-items: end;
+        flex-wrap: wrap;
+        margin: 10px 0 14px;
+      }
+      .flow-controls label {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #334155;
+      }
+      .flow-controls select {
+        min-width: 210px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        background: #fff;
+        color: var(--text);
+        font-weight: 700;
+      }
+      .flow-grid {
+        display: grid;
+        grid-template-columns: minmax(340px, 0.9fr) minmax(420px, 1.1fr);
+        gap: 16px;
+        align-items: start;
+      }
+      .flow-stage {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #fff;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+      .flow-stage h4 {
+        margin: 0 0 8px;
+        color: #1f2f4a;
+      }
+      .flow-step-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .flow-step {
+        display: grid;
+        grid-template-columns: 54px minmax(80px, 120px) 1fr;
+        gap: 10px;
+        align-items: start;
+        border: 1px solid #e5edf6;
+        border-radius: 8px;
+        padding: 10px;
+        background: #fbfdff;
+      }
+      .flow-step .idx {
+        font-weight: 900;
+        color: #64748b;
+      }
+      .flow-step .node {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 900;
+        color: #0f172a;
+      }
+      .flow-proof-ok {
+        border-color: #bbf7d0;
+        background: #f0fdf4;
+      }
+      .flow-proof-warn {
+        border-color: #fde68a;
+        background: #fffbeb;
+      }
+      .flow-proof-fail {
+        border-color: #fecaca;
+        background: #fff7f7;
+      }
+      .flow-output {
+        max-height: 360px;
+        font-size: 12px;
+      }
+      .flow-empty {
+        padding: 12px 14px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        background: #fafcff;
+        color: #475569;
+        line-height: 1.5;
+      }
+      @media (max-width: 1200px) {
+        .grid.cols-3 {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      @media (max-width: 1080px) {
+        .design-layout,
+        .design-split,
+        .ip-grid {
+          grid-template-columns: 1fr;
+        }
+        .design-card.wide {
+          grid-column: auto;
+        }
+        .mini-svg {
+          min-width: 620px;
+        }
+        .grid.cols-2,
+        .grid.cols-3,
+        .chart-grid,
+        .flow-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        header {
+          padding: 20px 16px;
+        }
+        main {
+          padding: 14px;
+        }
+        h1 {
+          font-size: 23px;
+        }
+        .subtitle {
+          font-size: 14px;
+        }
+        .card,
+        .section-card {
+          padding: 14px;
+        }
+        .toolbar button,
+        .toolbar .btn {
+          width: 100%;
+          justify-content: center;
+          text-align: center;
+        }
+        .tabbar {
+          position: static;
+          gap: 6px;
+          padding: 8px;
+        }
+        .tab {
+          flex: 1 1 150px;
+        }
+        .metric {
+          min-height: 78px;
+        }
+        .metric .value {
+          font-size: 19px;
+        }
+        .flow-step {
+          grid-template-columns: 42px 1fr;
+        }
+        .flow-step .node {
+          grid-column: 2;
+        }
+        table {
+          min-width: 560px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Metro Ethernet MAN sử dụng MPLS cho kết nối đa chi nhánh</h1>
+      <div class="subtitle">
+        Dashboard tập trung vào <b>thiết kế chi tiết từng vùng mạng</b>,
+        <b>lệnh kiểm tra đúng theo README</b>, và <b>kết quả biểu đồ</b> và
+        <b>so sánh MPLS/IP</b>. Dữ liệu kết quả được giữ nguyên cho đến khi bạn
+        chủ động bấm <b>Nạp lại dữ liệu</b>.
+      </div>
+      <div class="toolbar">
+        <button id="reloadBtn" class="primary">Nạp lại dữ liệu</button>
+        <label class="btn light" for="file">Chọn JSON thủ công</label>
+        <input id="file" type="file" accept="application/json" hidden />
+        <button id="clearCache" class="light">Xóa dữ liệu lưu</button>
+        <span id="status" class="pill warn">Chưa nạp dữ liệu kết quả</span>
+        <span id="sourcePill" class="pill">Nguồn: chưa có</span>
+      </div>
+    </header>
+    <main>
+      <div class="grid cols-2">
+        <div class="card">
+          <h2 class="section-title">Tóm tắt</h2>
+          <div id="summaryText" class="callout"></div>
+          <div class="divider"></div>
+          <div id="metrics" class="grid cols-3"></div>
+          <p class="small">
+            Kết quả sau khi nạp sẽ được lưu trong trình duyệt. Dashboard sẽ
+            không tự reload; chỉ cập nhật khi bạn bấm
+            <b>Nạp lại dữ liệu</b> hoặc chọn file JSON thủ công.
+          </p>
+        </div>
+        <div class="card">
+          <h2 class="section-title">Trạng thái dữ liệu</h2>
+          <div id="dataState" class="grid cols-2"></div>
+          <div class="divider"></div>
+          <div class="chip-list">
+            <span class="kbd" data-copy="runquick">runquick</span>
+            <span class="kbd" data-copy="runall">runall</span>
+            <span class="kbd" data-copy="dash 8000">dash 8000</span>
+            <span
+              class="kbd"
+              data-copy="http://127.0.0.1:8000/mpls_dashboard_tool.html"
+              >http://127.0.0.1:8000/mpls_dashboard_tool.html</span
+            >
+          </div>
+          <p class="small">
+            Khuyến nghị: trong Mininet CLI chạy <code>runall</code>, sau đó mở
+            dashboard bằng <code>dash 8000</code>, rồi bấm
+            <b>Nạp lại dữ liệu</b>.
+          </p>
+        </div>
+      </div>
+
+      <div class="tabbar">
+        <button class="tab active" data-tab="overview">Tổng quan</button>
+        <button class="tab" data-tab="branches">Thiết kế chi nhánh</button>
+        <button class="tab" data-tab="requirements">Kiểm chứng yêu cầu</button>
+        <button class="tab" data-tab="results">Kết quả & biểu đồ</button>
+        <button class="tab" data-tab="compare">So sánh MPLS/IP</button>
+        <button class="tab" data-tab="flow">Mô tả luồng di chuyển</button>
+        <button class="tab" data-tab="control">MPLS / OSPF / VPLS</button>
+      </div>
+
+      <section id="overview" class="panel active">
+        <div class="grid cols-2">
+          <div class="card">
+            <h2 class="section-title">Tổng quan dự án</h2>
+            <div id="overviewDesign"></div>
+          </div>
+          <div class="card">
+            <h2 class="section-title">Bảng so sánh nhanh</h2>
+            <div id="overviewCompare"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="branches" class="panel">
+        <div class="card">
+          <h2 class="section-title">Thiết kế hệ thống, chi nhánh và bảng IP</h2>
+          <p class="small">
+            Phần này thay cho tab sơ đồ logic riêng. Mỗi khối bên dưới gom đủ:
+            sơ đồ vùng mạng, cơ chế định tuyến và bảng địa chỉ IP để dễ chụp đưa
+            vào báo cáo.
+          </p>
+
+          <div class="design-layout">
+            <div class="design-card wide">
+              <h3>Backbone MPLS / ISP Core</h3>
+              <div class="design-split">
+                <div class="mini-topology">
+                  <svg
+                    class="mini-svg"
+                    viewBox="0 0 980 360"
+                    aria-label="Backbone MPLS"
+                  >
+                    <rect
+                      class="cloud"
+                      x="45"
+                      y="28"
+                      width="890"
+                      height="270"
+                      rx="70"
+                    />
+                    <text
+                      class="mini-title"
+                      x="490"
+                      y="62"
+                      text-anchor="middle"
+                    >
+                      VÙNG MPLS / ISP MPLS BACKBONE
+                    </text>
+                    <path
+                      class="bb"
+                      d="M210 150 L350 95 M210 150 L350 220 M350 95 L610 95 M350 220 L610 220 M350 95 L350 220 M610 95 L610 220 M350 95 L610 220 M610 95 L350 220 M350 220 L485 275 M610 220 L485 275 M610 95 L780 150 M610 220 L780 150"
+                    />
+                    <circle class="routerEdge" cx="210" cy="150" r="30" />
+                    <text
+                      class="mini-label"
+                      x="210"
+                      y="154"
+                      text-anchor="middle"
+                      fill="#fff"
+                    >
+                      PE1
+                    </text>
+                    <circle class="routerEdge" cx="485" cy="275" r="30" />
+                    <text
+                      class="mini-label"
+                      x="485"
+                      y="279"
+                      text-anchor="middle"
+                      fill="#fff"
+                    >
+                      PE2
+                    </text>
+                    <circle class="routerEdge" cx="780" cy="150" r="30" />
+                    <text
+                      class="mini-label"
+                      x="780"
+                      y="154"
+                      text-anchor="middle"
+                      fill="#fff"
+                    >
+                      PE3
+                    </text>
+                    <circle class="router" cx="350" cy="95" r="27" />
+                    <text
+                      class="mini-label"
+                      x="350"
+                      y="99"
+                      text-anchor="middle"
+                      fill="#fff"
+                    >
+                      P1
+                    </text>
+                    <circle class="router" cx="610" cy="95" r="27" />
+                    <text
+                      class="mini-label"
+                      x="610"
+                      y="99"
+                      text-anchor="middle"
+                      fill="#fff"
+                    >
+                      P2
+                    </text>
+                    <circle class="router" cx="350" cy="220" r="27" />
+                    <text
+                      class="mini-label"
+                      x="350"
+                      y="224"
+                      text-anchor="middle"
+                      fill="#fff"
+                    >
+                      P3
+                    </text>
+                    <circle class="router" cx="610" cy="220" r="27" />
+                    <text
+                      class="mini-label"
+                      x="610"
+                      y="224"
+                      text-anchor="middle"
+                      fill="#fff"
+                    >
+                      P4
+                    </text>
+                    <text class="mini-small" x="110" y="325">
+                      CE1--PE1: 10.0.11.0/30
+                    </text>
+                    <text class="mini-small" x="410" y="325">
+                      CE2--PE2: 10.0.12.0/30
+                    </text>
+                    <text class="mini-small" x="690" y="325">
+                      CE3--PE3: 10.0.13.0/30
+                    </text>
+                  </svg>
+                </div>
+                <div>
+                  <h4>Cơ chế định tuyến / MPLS</h4>
+                  <ul class="routing-list">
+                    <li>
+                      <b>PE</b> nối CE của từng chi nhánh và đưa lưu lượng
+                      vào/ra vùng MPLS.
+                    </li>
+                    <li>
+                      <b>P router</b> chỉ chuyển tiếp trong lõi dựa trên nhãn
+                      MPLS.
+                    </li>
+                    <li>
+                      <b>LDP</b> phân phối nhãn; LFIB trong kernel dùng để
+                      chuyển tiếp nhãn.
+                    </li>
+                    <li>
+                      Luồng liên chi nhánh: CE nguồn → PE nguồn → P/P backbone →
+                      PE đích → CE đích.
+                    </li>
+                    <li>
+                      Quy ước subnet backbone: các mã 103/203/204/43 dùng cho
+                      link P-P để tránh trùng với prefix PE-P.
+                    </li>
+                  </ul>
+                  <h4>Lệnh kiểm tra nhanh</h4>
+                  <div class="chip-list">
+                    <span class="kbd" data-copy="P1 v show mpls ldp binding"
+                      >P1 v show mpls ldp binding</span
+                    >
+                    <span class="kbd" data-copy="P1 v show mpls ldp neighbor"
+                      >P1 v show mpls ldp neighbor</span
+                    >
+                    <span class="kbd" data-copy="P1 ip -f mpls route"
+                      >P1 ip -f mpls route</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="design-card">
+              <h3>Chi nhánh 1 - Flat Network</h3>
+              <div class="mini-topology">
+                <svg
+                  class="mini-svg"
+                  viewBox="0 0 620 330"
+                  aria-label="Branch 1 flat network"
+                >
+                  <rect
+                    class="box"
+                    x="25"
+                    y="25"
+                    width="570"
+                    height="280"
+                    rx="18"
+                    fill="#eff6ff"
+                  />
+                  <text class="mini-title" x="310" y="58" text-anchor="middle">
+                    CHI NHÁNH 1 - MẠNG PHẲNG
+                  </text>
+                  <circle class="routerEdge" cx="310" cy="100" r="27" />
+                  <text
+                    class="mini-label"
+                    x="310"
+                    y="104"
+                    text-anchor="middle"
+                    fill="#fff"
+                  >
+                    CE1
+                  </text>
+                  <path
+                    class="link"
+                    d="M310 127 L310 165 L205 190 M310 165 L415 190"
+                  />
+                  <rect
+                    class="sw"
+                    x="140"
+                    y="190"
+                    width="130"
+                    height="45"
+                    rx="10"
+                  />
+                  <text class="mini-label" x="205" y="218" text-anchor="middle">
+                    Access SW
+                  </text>
+                  <rect
+                    class="sw"
+                    x="350"
+                    y="190"
+                    width="130"
+                    height="45"
+                    rx="10"
+                  />
+                  <text class="mini-label" x="415" y="218" text-anchor="middle">
+                    Access SW
+                  </text>
+                  <path
+                    class="link"
+                    d="M205 235 L135 270 M205 235 L230 270 M415 235 L390 270 M415 235 L485 270"
+                  />
+                  <rect
+                    class="host"
+                    x="100"
+                    y="270"
+                    width="70"
+                    height="38"
+                    rx="8"
+                  />
+                  <text class="mini-small" x="135" y="294" text-anchor="middle">
+                    host1
+                  </text>
+                  <rect
+                    class="host"
+                    x="195"
+                    y="270"
+                    width="70"
+                    height="38"
+                    rx="8"
+                  />
+                  <text class="mini-small" x="230" y="294" text-anchor="middle">
+                    host2
+                  </text>
+                  <rect
+                    class="host"
+                    x="355"
+                    y="270"
+                    width="70"
+                    height="38"
+                    rx="8"
+                  />
+                  <text class="mini-small" x="390" y="294" text-anchor="middle">
+                    host3
+                  </text>
+                  <rect
+                    class="host"
+                    x="450"
+                    y="270"
+                    width="70"
+                    height="38"
+                    rx="8"
+                  />
+                  <text class="mini-small" x="485" y="294" text-anchor="middle">
+                    host4
+                  </text>
+                </svg>
+              </div>
+              <h4>Cơ chế định tuyến</h4>
+              <ul class="routing-list">
+                <li>CE1 là gateway LAN 192.168.10.1/24.</li>
+                <li>Toàn bộ host dùng chung subnet 192.168.10.0/24.</li>
+                <li>Lưu lượng liên chi nhánh đi CE1 → PE1 → MPLS Backbone.</li>
+              </ul>
+            </div>
+
+            <div class="design-card">
+              <h3>Chi nhánh 2 - Core / Distribution / Access</h3>
+              <div class="mini-topology">
+                <svg
+                  class="mini-svg"
+                  viewBox="0 0 650 455"
+                  aria-label="Branch 2 3-tier VLAN"
+                >
+                  <rect
+                    class="box"
+                    x="25"
+                    y="25"
+                    width="600"
+                    height="405"
+                    rx="18"
+                    fill="#fff7ed"
+                  />
+                  <text
+                    class="mini-title"
+                    x="325"
+                    y="58"
+                    text-anchor="middle"
+                    fill="#991b1b"
+                  >
+                    CHI NHÁNH 2 - MẠNG 3 LỚP
+                  </text>
+                  <circle class="routerEdge" cx="325" cy="95" r="27" />
+                  <text
+                    class="mini-label"
+                    x="325"
+                    y="99"
+                    text-anchor="middle"
+                    fill="#fff"
+                  >
+                    CE2
+                  </text>
+                  <path class="link" d="M325 122 L245 160 M325 122 L405 160" />
+                  <rect
+                    class="swOrange"
+                    x="190"
+                    y="160"
+                    width="110"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="245" y="186" text-anchor="middle">
+                    core1
+                  </text>
+                  <rect
+                    class="swOrange"
+                    x="350"
+                    y="160"
+                    width="110"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="405" y="186" text-anchor="middle">
+                    core2
+                  </text>
+                  <text class="mini-small" x="55" y="186">CORE</text>
+                  <path
+                    class="vlan"
+                    d="M245 202 L245 235 M405 202 L405 235 M245 202 L405 235 M405 202 L245 235"
+                  />
+                  <rect
+                    class="swOrange"
+                    x="190"
+                    y="235"
+                    width="110"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="245" y="261" text-anchor="middle">
+                    dist1
+                  </text>
+                  <rect
+                    class="swOrange"
+                    x="350"
+                    y="235"
+                    width="110"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="405" y="261" text-anchor="middle">
+                    dist2
+                  </text>
+                  <text class="mini-small" x="55" y="261">DISTRIBUTION</text>
+                  <path
+                    class="vlan"
+                    d="M245 277 L165 305 M245 277 L325 305 M405 277 L325 305 M405 277 L485 305"
+                  />
+                  <rect
+                    class="swOrange"
+                    x="115"
+                    y="305"
+                    width="100"
+                    height="40"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="165" y="330" text-anchor="middle">
+                    access1
+                  </text>
+                  <rect
+                    class="swOrange"
+                    x="275"
+                    y="305"
+                    width="100"
+                    height="40"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="325" y="330" text-anchor="middle">
+                    access2
+                  </text>
+                  <rect
+                    class="swOrange"
+                    x="435"
+                    y="305"
+                    width="100"
+                    height="40"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="485" y="330" text-anchor="middle">
+                    access3
+                  </text>
+                  <path
+                    class="link"
+                    d="M165 345 L125 382 M165 345 L205 382 M325 345 L285 382 M325 345 L365 382 M485 345 L445 382 M485 345 L525 382"
+                  />
+                  <rect
+                    class="host"
+                    x="92"
+                    y="382"
+                    width="66"
+                    height="34"
+                    rx="7"
+                  />
+                  <text class="mini-small" x="125" y="404" text-anchor="middle">
+                    admin1
+                  </text>
+                  <rect
+                    class="host"
+                    x="172"
+                    y="382"
+                    width="66"
+                    height="34"
+                    rx="7"
+                  />
+                  <text class="mini-small" x="205" y="404" text-anchor="middle">
+                    admin2
+                  </text>
+                  <rect
+                    class="host"
+                    x="252"
+                    y="382"
+                    width="66"
+                    height="34"
+                    rx="7"
+                  />
+                  <text class="mini-small" x="285" y="404" text-anchor="middle">
+                    lab1
+                  </text>
+                  <rect
+                    class="host"
+                    x="332"
+                    y="382"
+                    width="66"
+                    height="34"
+                    rx="7"
+                  />
+                  <text class="mini-small" x="365" y="404" text-anchor="middle">
+                    lab2
+                  </text>
+                  <rect
+                    class="host"
+                    x="412"
+                    y="382"
+                    width="66"
+                    height="34"
+                    rx="7"
+                  />
+                  <text class="mini-small" x="445" y="404" text-anchor="middle">
+                    guest1
+                  </text>
+                  <rect
+                    class="host"
+                    x="492"
+                    y="382"
+                    width="66"
+                    height="34"
+                    rx="7"
+                  />
+                  <text class="mini-small" x="525" y="404" text-anchor="middle">
+                    guest2
+                  </text>
+                  <text class="mini-small" x="165" y="426" text-anchor="middle">
+                    VLAN 10
+                  </text>
+                  <text class="mini-small" x="325" y="426" text-anchor="middle">
+                    VLAN 20
+                  </text>
+                  <text class="mini-small" x="485" y="426" text-anchor="middle">
+                    VLAN 30
+                  </text>
+                </svg>
+              </div>
+              <h4>Cơ chế định tuyến</h4>
+              <ul class="routing-list">
+                <li>
+                  Core/Distribution/Access mang VLAN 10, 20, 30 qua trunk.
+                </li>
+                <li>CE2 router-on-a-stick tạo ce2-lan.10/20/30.</li>
+                <li>CE2 định tuyến liên VLAN và đưa traffic ra PE2.</li>
+              </ul>
+            </div>
+
+            <div class="design-card">
+              <h3>Chi nhánh 3 - Leaf-Spine</h3>
+              <div class="mini-topology">
+                <svg
+                  class="mini-svg"
+                  viewBox="0 0 650 370"
+                  aria-label="Branch 3 leaf spine"
+                >
+                  <rect
+                    class="box"
+                    x="25"
+                    y="25"
+                    width="600"
+                    height="320"
+                    rx="18"
+                    fill="#f0fdf4"
+                  />
+                  <text
+                    class="mini-title"
+                    x="325"
+                    y="58"
+                    text-anchor="middle"
+                    fill="#166534"
+                  >
+                    CHI NHÁNH 3 - LEAF-SPINE
+                  </text>
+                  <circle class="routerEdge" cx="325" cy="95" r="27" />
+                  <text
+                    class="mini-label"
+                    x="325"
+                    y="99"
+                    text-anchor="middle"
+                    fill="#fff"
+                  >
+                    CE3
+                  </text>
+                  <path class="link" d="M325 122 L230 165 M325 122 L420 165" />
+                  <rect
+                    class="swGreen"
+                    x="175"
+                    y="165"
+                    width="110"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="230" y="191" text-anchor="middle">
+                    spine1
+                  </text>
+                  <rect
+                    class="swGreen"
+                    x="365"
+                    y="165"
+                    width="110"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="420" y="191" text-anchor="middle">
+                    spine2
+                  </text>
+                  <path
+                    class="ospf"
+                    d="M230 207 L160 265 M230 207 L325 265 M230 207 L490 265 M420 207 L160 265 M420 207 L325 265 M420 207 L490 265"
+                  />
+                  <rect
+                    class="swGreen"
+                    x="110"
+                    y="265"
+                    width="100"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="160" y="291" text-anchor="middle">
+                    leaf1
+                  </text>
+                  <rect
+                    class="swGreen"
+                    x="275"
+                    y="265"
+                    width="100"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="325" y="291" text-anchor="middle">
+                    leaf2
+                  </text>
+                  <rect
+                    class="swGreen"
+                    x="440"
+                    y="265"
+                    width="100"
+                    height="42"
+                    rx="9"
+                  />
+                  <text class="mini-label" x="490" y="291" text-anchor="middle">
+                    leaf3
+                  </text>
+                  <text class="mini-small" x="160" y="330" text-anchor="middle">
+                    web1/web2 (WEB)
+                  </text>
+                  <text class="mini-small" x="325" y="330" text-anchor="middle">
+                    dns1/dns2 (DNS)
+                  </text>
+                  <text class="mini-small" x="490" y="330" text-anchor="middle">
+                    db1/db2 (DB)
+                  </text>
+                </svg>
+              </div>
+              <h4>Cơ chế định tuyến</h4>
+              <ul class="routing-list">
+                <li>CE3, spine và leaf chạy OSPF underlay.</li>
+                <li>Leaf nối lên cả hai spine để có nhiều đường song song.</li>
+                <li>
+                  ECMP thể hiện bằng nhiều nexthop weight 1 trong bảng route.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="ip-plan">
+            <h2>Bảng địa chỉ IP toàn hệ thống</h2>
+            <div class="ip-grid">
+              <div class="ip-card">
+                <h4>Backbone MPLS / WAN</h4>
+                <table class="ip-table">
+                  <thead>
+                    <tr>
+                      <th>Liên kết</th>
+                      <th>Dải IP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>CE1 - PE1</td>
+                      <td>10.0.11.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>CE2 - PE2</td>
+                      <td>10.0.12.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>CE3 - PE3</td>
+                      <td>10.0.13.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>PE1 - P1</td>
+                      <td>10.255.11.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>P1 - P2</td>
+                      <td>10.255.12.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>PE1 - P3</td>
+                      <td>10.255.13.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>P1 - P4</td>
+                      <td>10.255.14.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>PE2 - P3</td>
+                      <td>10.255.23.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>PE2 - P4</td>
+                      <td>10.255.24.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>PE3 - P2</td>
+                      <td>10.255.32.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>PE3 - P4</td>
+                      <td>10.255.34.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>P3 - P4</td>
+                      <td>10.255.43.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>P1 - P3</td>
+                      <td>10.255.103.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>P2 - P3</td>
+                      <td>10.255.203.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>P2 - P4</td>
+                      <td>10.255.204.0/30</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="small">
+                  <b>Quy ước:</b> 10.255.103/203/204 và 10.255.43 là mã link P-P
+                  để tránh trùng với các link PE-P. Ví dụ P1-P3 dùng 103 vì 13
+                  đã dùng cho PE1-P3; P2-P3 dùng 203 vì 23 đã dùng cho PE2-P3;
+                  P3-P4 dùng 43 vì 34 đã dùng cho PE3-P4.
+                </p>
+              </div>
+              <div class="ip-card">
+                <h4>Loopback /32</h4>
+                <table class="ip-table">
+                  <thead>
+                    <tr>
+                      <th>Router</th>
+                      <th>Loopback</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>PE1</td>
+                      <td>1.1.1.1/32</td>
+                    </tr>
+                    <tr>
+                      <td>PE2</td>
+                      <td>2.2.2.2/32</td>
+                    </tr>
+                    <tr>
+                      <td>PE3</td>
+                      <td>3.3.3.3/32</td>
+                    </tr>
+                    <tr>
+                      <td>P1</td>
+                      <td>11.11.11.11/32</td>
+                    </tr>
+                    <tr>
+                      <td>P2</td>
+                      <td>22.22.22.22/32</td>
+                    </tr>
+                    <tr>
+                      <td>P3</td>
+                      <td>33.33.33.33/32</td>
+                    </tr>
+                    <tr>
+                      <td>P4</td>
+                      <td>44.44.44.44/32</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="ip-card">
+                <h4>Chi nhánh 1 - Flat</h4>
+                <table class="ip-table">
+                  <thead>
+                    <tr>
+                      <th>Thiết bị</th>
+                      <th>IP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>CE1 gateway</td>
+                      <td>192.168.10.1/24</td>
+                    </tr>
+                    <tr>
+                      <td>host1</td>
+                      <td>192.168.10.11/24</td>
+                    </tr>
+                    <tr>
+                      <td>host2</td>
+                      <td>192.168.10.12/24</td>
+                    </tr>
+                    <tr>
+                      <td>host3</td>
+                      <td>192.168.10.13/24</td>
+                    </tr>
+                    <tr>
+                      <td>host4</td>
+                      <td>192.168.10.14/24</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="ip-card">
+                <h4>Chi nhánh 2 - VLAN 10/20/30</h4>
+                <table class="ip-table">
+                  <thead>
+                    <tr>
+                      <th>Thiết bị / VLAN</th>
+                      <th>IP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>CE2 WAN</td>
+                      <td>10.0.12.1/30</td>
+                    </tr>
+                    <tr>
+                      <td>VLAN 10 gateway</td>
+                      <td>192.168.20.1/24</td>
+                    </tr>
+                    <tr>
+                      <td>admin1 / admin2</td>
+                      <td>192.168.20.11/24, 192.168.20.12/24</td>
+                    </tr>
+                    <tr>
+                      <td>VLAN 20 gateway</td>
+                      <td>192.168.21.1/24</td>
+                    </tr>
+                    <tr>
+                      <td>lab1 / lab2</td>
+                      <td>192.168.21.11/24, 192.168.21.12/24</td>
+                    </tr>
+                    <tr>
+                      <td>VLAN 30 gateway</td>
+                      <td>192.168.22.1/24</td>
+                    </tr>
+                    <tr>
+                      <td>guest1 / guest2</td>
+                      <td>192.168.22.11/24, 192.168.22.12/24</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="ip-card">
+                <h4>Chi nhánh 3 - Leaf-Spine</h4>
+                <table class="ip-table">
+                  <thead>
+                    <tr>
+                      <th>Thiết bị / Mạng</th>
+                      <th>IP / Prefix</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>CE3 WAN</td>
+                      <td>10.0.13.1/30</td>
+                    </tr>
+                    <tr>
+                      <td>CE3 - spine1</td>
+                      <td>10.3.10.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>CE3 - spine2</td>
+                      <td>10.3.20.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>spine1 - leaf1/2/3</td>
+                      <td>10.3.11.0/30, 10.3.12.0/30, 10.3.13.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>spine2 - leaf1/2/3</td>
+                      <td>10.3.21.0/30, 10.3.22.0/30, 10.3.23.0/30</td>
+                    </tr>
+                    <tr>
+                      <td>WEB</td>
+                      <td>192.168.30.0/24</td>
+                    </tr>
+                    <tr>
+                      <td>DNS</td>
+                      <td>192.168.31.0/24</td>
+                    </tr>
+                    <tr>
+                      <td>DB</td>
+                      <td>192.168.32.0/24</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <h2>Phân tích nhanh từng chi nhánh</h2>
+          <div id="branchDetails" class="grid cols-3"></div>
+        </div>
+      </section>
+
+      <section id="requirements" class="panel">
+        <div class="card section-card">
+          <h2 class="section-title">Checklist kiểm chứng yêu cầu hệ thống</h2>
+          <p class="small">
+            Phần này đọc kết quả từ <b>runall/runquick</b> trong JSON để tự đánh
+            dấu PASS/WARN/FAIL. Dashboard không tự chạy lệnh Mininet; nó chỉ
+            hiển thị kết quả đã được runner.py ghi lại.
+          </p>
+          <div id="reqList" class="grid"></div>
+        </div>
+      </section>
+
+      <section id="results" class="panel">
+        <div class="card section-card">
+          <h2 class="section-title">Kết quả & biểu đồ</h2>
+          <div id="resultNotice" class="result-note">
+            Chưa có dữ liệu kết quả. Hãy chạy <b>runall</b> hoặc
+            <b>runquick</b>, sau đó bấm <b>Nạp lại dữ liệu</b>.
+          </div>
+          <div class="divider"></div>
+          <div class="chart-grid">
+            <div class="chart-box">
+              <h3>Ping delay trung bình</h3>
+              <div id="chartDelay" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>Ping packet loss</h3>
+              <div id="chartPingLoss" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>Delay nội bộ từng chi nhánh</h3>
+              <div id="chartIntraDelay" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>TCP throughput liên chi nhánh</h3>
+              <div id="chartTcp" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>TCP throughput nội bộ</h3>
+              <div id="chartIntraTcp" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>UDP jitter</h3>
+              <div id="chartJitter" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>Packet loss theo offered load</h3>
+              <div id="chartLoad" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>Kết nối nhanh giữa các chi nhánh</h3>
+              <div id="connSummary"></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div id="tables"></div>
+        </div>
+      </section>
+
+      <section id="compare" class="panel">
+        <div class="card section-card">
+          <h2 class="section-title">So sánh MPLS và IP Routing</h2>
+          <div id="compareNotice" class="result-note">
+            Chưa có dữ liệu so sánh. Hãy chạy <b>runall</b>, sau đó bấm
+            <b>Nạp lại dữ liệu</b>.
+          </div>
+          <div class="divider"></div>
+          <div id="compareSummary" class="grid cols-3"></div>
+          <div class="divider"></div>
+          <div class="chart-grid">
+            <div class="chart-box">
+              <h3>Delay trung bình</h3>
+              <div id="chartCompareDelay" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>TCP throughput trung bình</h3>
+              <div id="chartCompareTcp" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>UDP jitter trung bình</h3>
+              <div id="chartCompareJitter" class="chart"></div>
+            </div>
+            <div class="chart-box">
+              <h3>Packet loss trung bình</h3>
+              <div id="chartCompareLoss" class="chart"></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div id="compareTables"></div>
+        </div>
+      </section>
+
+      <section id="flow" class="panel">
+        <div class="card section-card">
+          <h2 class="section-title">
+            Mô tả luồng di chuyển Push / Swap / PHP / Pop
+          </h2>
+          <p class="small">
+            Chọn hướng Branch A → Branch B rồi bấm chạy để xem vòng đời gói tin.
+            Phần bên phải dùng dữ liệu <b>tcpdump -XX</b> do
+            <b>runquick/runall</b> lưu trong JSON, nên có thể chụp màn hình trực
+            tiếp làm minh chứng Hex Dump.
+          </p>
+          <div id="flowControls" class="flow-controls"></div>
+          <div id="flowNotice" class="result-note">Chưa có dữ liệu flow.</div>
+          <div class="divider"></div>
+          <div id="flowContent"></div>
+        </div>
+      </section>
+      <section id="control" class="panel">
+        <div class="card section-card">
+          <h2 class="section-title">MPLS / OSPF / VPLS snapshots</h2>
+          <pre id="snap">Chưa có dữ liệu điều khiển.</pre>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // ============================================================
+      // CONFIGURATION & DATA DEFINITIONS
+      // ============================================================
+
+      const DESIGN = {
+        project_title:
+          "Metro Ethernet MAN sử dụng MPLS cho kết nối đa chi nhánh doanh nghiệp",
+        topology_summary:
+          "ISP MPLS backbone PE1/PE2/PE3 + P1/P2/P3/P4 kết nối CE1/CE2/CE3 và 3 LAN kiến trúc khác nhau.",
+        assignment_requirements: [
+          {
+            id: "REQ-1",
+            requirement:
+              "Kết nối nhiều chi nhánh qua Metro Ethernet MPLS backbone",
+            implementation:
+              "CE1/CE2/CE3 nối PE1/PE2/PE3; P1-P4 là provider core; LFIB MPLS và label service 101/201/301.",
+            evidence: [
+              "P1 v show mpls ldp binding",
+              "P1 v show mpls ldp neighbor",
+              "P1 ip -f mpls route",
+            ],
+            note: "Cần nhìn thấy LDP binding, LDP neighbor và LFIB trong kernel MPLS.",
+          },
+          {
+            id: "REQ-2",
+            requirement: "Chi nhánh 1 Flat Network",
+            implementation:
+              "host1..host4 chung 192.168.10.0/24, gateway CE1 192.168.10.1, OVS flat1. Tên node Mininet tương ứng là H1_1..H1_4.",
+            evidence: ["H1_1 ping -c 2 192.168.10.14"],
+            note: "Nếu ping từ host1 tới host4 thành công thì Flat LAN hoạt động đúng. Lệnh kiểm tra vẫn dùng tên node Mininet H1_1 và H1_4.",
+          },
+          {
+            id: "REQ-3",
+            requirement: "Chi nhánh 2 Core-Distribution-Access",
+            implementation:
+              "core1, dist1/dist2, access1/access2/access3; VLAN 10/20/30; CE2 router-on-a-stick.",
+            evidence: [
+              "core1 ovs-vsctl show",
+              'CE2 sh -c "ip -brief addr show | grep ce2-lan"',
+              "CE2 ip route",
+              "CE2 v show ip route",
+              "H2_1 ping -c 2 192.168.21.11",
+            ],
+            note: "Kiểm tra VLAN trunk/access, subinterface CE2 và inter-VLAN routing.",
+          },
+          {
+            id: "REQ-4",
+            requirement: "Chi nhánh 3 Leaf-Spine",
+            implementation:
+              "spine1/spine2 nối leaf1/leaf2/leaf3; OSPF underlay; spine/CE3 có ECMP nexthop weight 1.",
+            evidence: [
+              "spine1 v show ip ospf neighbor",
+              "spine1 v show ip ospf route",
+              "CE3 v show ip route",
+              "spine1 ip route",
+            ],
+            note: "Trong ip route cần thấy nhiều nexthop weight 1 để chứng minh ECMP.",
+          },
+          {
+            id: "REQ-5",
+            requirement: "Router P/PE/CE, Switch và Host trên Mininet",
+            implementation:
+              "Topology.py dựng P, PE, CE, OVS switch và host theo sơ đồ logic.",
+            evidence: ["sudo python3 topology.py"],
+            note: "Đây là lệnh khởi động mô hình tổng thể.",
+          },
+          {
+            id: "REQ-6",
+            requirement:
+              "Bảng hiệu năng Throughput, Delay, Packet loss, Jitter",
+            implementation:
+              "runner.py sinh JSON ping/tcp/udp/load; dashboard hiển thị bảng và biểu đồ.",
+            evidence: [
+              "runquick",
+              "runall",
+              "dash 8000",
+              "http://127.0.0.1:8000/mpls_dashboard_tool.html",
+            ],
+            note: "Sau khi chạy runquick/runall, bấm Nạp lại dữ liệu để cập nhật biểu đồ.",
+          },
+          {
+            id: "REQ-7",
+            requirement: "Phân tích label switching và đường đi gói tin MPLS",
+            implementation:
+              "Trace MPLS hiển thị push/swap/PHP/pop và kết hợp kiểm tra LDP binding.",
+            evidence: ["trace H1_1 H2_1", "P1 v show mpls ldp binding"],
+            note: "Dùng trace để mô tả đường đi gói tin và liên hệ với bảng label.",
+          },
+        ],
+        branches: [
+          {
+            name: "Chi nhánh 1",
+            architecture: "Flat Network",
+            purpose: "Mạng LAN đơn giản cho văn phòng nhỏ.",
+            routing: "CE1 làm gateway mặc định; toàn bộ host cùng subnet.",
+            subnets: [{ name: "Users", prefix: "192.168.10.0/24" }],
+            advantages: [
+              "Dễ triển khai, dễ quan sát baseline delay/loss.",
+              "Mọi host cùng miền broadcast nên cấu hình đơn giản.",
+            ],
+            tradeoffs: [
+              "Khó mở rộng khi số host tăng.",
+              "Không tách lưu lượng theo vai trò người dùng.",
+            ],
+            tests: ["H1_1 ping -c 2 192.168.10.14"],
+          },
+          {
+            name: "Chi nhánh 2",
+            architecture: "Core / Distribution / Access",
+            purpose: "Mạng campus mô phỏng doanh nghiệp theo mô hình 3 lớp.",
+            routing: "CE2 router-on-a-stick cho VLAN 10/20/30.",
+            subnets: [
+              { name: "Admin", prefix: "192.168.20.0/24" },
+              { name: "Lab", prefix: "192.168.21.0/24" },
+              { name: "Guest", prefix: "192.168.22.0/24" },
+            ],
+            advantages: [
+              "Có phân tầng rõ ràng, dễ quản lý.",
+              "Tách VLAN theo nhóm người dùng và hỗ trợ inter-VLAN routing.",
+            ],
+            tradeoffs: [
+              "Nhiều lớp nên cần cấu hình trunk/access cẩn thận.",
+              "Phụ thuộc CE2 để định tuyến giữa VLAN.",
+            ],
+            tests: [
+              "core1 ovs-vsctl show",
+              'CE2 sh -c "ip -brief addr show | grep ce2-lan"',
+              "H2_1 ping -c 2 192.168.21.11",
+            ],
+          },
+          {
+            name: "Chi nhánh 3",
+            architecture: "Leaf-Spine",
+            purpose: "Mô phỏng datacenter branch với underlay dynamic routing.",
+            routing:
+              "OSPF underlay giữa CE3, spine và leaf; ECMP trên nhiều đường.",
+            subnets: [
+              { name: "Web", prefix: "192.168.30.0/24" },
+              { name: "DNS", prefix: "192.168.31.0/24" },
+              { name: "DB", prefix: "192.168.32.0/24" },
+            ],
+            advantages: [
+              "Mở rộng tốt, nhiều đường song song.",
+              "Thể hiện rõ ECMP và định tuyến động OSPF.",
+            ],
+            tradeoffs: [
+              "Cấu hình phức tạp hơn Flat/VLAN.",
+              "Cần theo dõi neighbor và route để xác nhận ECMP.",
+            ],
+            tests: [
+              "spine1 v show ip ospf neighbor",
+              "spine1 v show ip ospf route",
+              "spine1 ip route",
+            ],
+          },
+        ],
+      };
+
+      const FLOW_BRANCHES = [
+        { id: "branch1", label: "Branch 1 - Flat Network" },
+        { id: "branch2", label: "Branch 2 - Core/Distribution/Access" },
+        { id: "branch3", label: "Branch 3 - Leaf-Spine" },
+      ];
+      const FLOW_KEYS = {
+        branch1_branch2: "B1_to_B2",
+        branch2_branch1: "B2_to_B1",
+        branch1_branch3: "B1_to_B3",
+        branch3_branch1: "B3_to_B1",
+        branch2_branch3: "B2_to_B3",
+        branch3_branch2: "B3_to_B2",
+      };
+      const FLOW_FALLBACKS = {
+        B1_to_B2: {
+          src: "H1_1",
+          dst: "H2_1",
+          steps: [
+            {
+              node: "host1",
+              action: "host",
+              text: "Tạo ICMP/IP packet trong LAN Branch 1",
+            },
+            { node: "CE1", action: "lan", text: "Forward IP tới PE1" },
+            {
+              node: "PE1",
+              action: "push",
+              text: "Push outer 16002 + service 201",
+            },
+            {
+              node: "P3",
+              action: "php",
+              text: "PHP outer 16002, giữ service 201",
+            },
+            {
+              node: "PE2",
+              action: "pop",
+              text: "Pop service 201, đưa gói vào CE2",
+            },
+            { node: "admin1", action: "host", text: "Nhận gói tại Branch 2" },
+          ],
+        },
+        B2_to_B1: {
+          src: "H2_1",
+          dst: "H1_1",
+          steps: [
+            {
+              node: "admin1",
+              action: "host",
+              text: "Tạo ICMP/IP packet trong LAN Branch 2",
+            },
+            { node: "CE2", action: "lan", text: "Forward IP tới PE2" },
+            {
+              node: "PE2",
+              action: "push",
+              text: "Push outer 16001 + service 101",
+            },
+            {
+              node: "P3",
+              action: "php",
+              text: "PHP outer 16001, giữ service 101",
+            },
+            {
+              node: "PE1",
+              action: "pop",
+              text: "Pop service 101, đưa gói vào CE1",
+            },
+            { node: "host1", action: "host", text: "Nhận gói tại Branch 1" },
+          ],
+        },
+        B1_to_B3: {
+          src: "H1_1",
+          dst: "H3_1",
+          steps: [
+            {
+              node: "host1",
+              action: "host",
+              text: "Tạo ICMP/IP packet trong LAN Branch 1",
+            },
+            { node: "CE1", action: "lan", text: "Forward IP tới PE1" },
+            {
+              node: "PE1",
+              action: "push",
+              text: "Push outer 16003 + service 301",
+            },
+            { node: "P1", action: "swap", text: "Swap/forward outer 16003" },
+            {
+              node: "P2",
+              action: "php",
+              text: "PHP outer 16003, giữ service 301",
+            },
+            {
+              node: "PE3",
+              action: "pop",
+              text: "Pop service 301, đưa gói vào CE3",
+            },
+            { node: "web1", action: "host", text: "Nhận gói tại Branch 3" },
+          ],
+        },
+        B3_to_B1: {
+          src: "H3_1",
+          dst: "H1_1",
+          steps: [
+            {
+              node: "web1",
+              action: "host",
+              text: "Tạo ICMP/IP packet trong LAN Branch 3",
+            },
+            { node: "CE3", action: "lan", text: "Forward IP tới PE3" },
+            {
+              node: "PE3",
+              action: "push",
+              text: "Push outer 16001 + service 101",
+            },
+            { node: "P2", action: "swap", text: "Swap/forward outer 16001" },
+            {
+              node: "P1",
+              action: "php",
+              text: "PHP outer 16001, giữ service 101",
+            },
+            {
+              node: "PE1",
+              action: "pop",
+              text: "Pop service 101, đưa gói vào CE1",
+            },
+            { node: "host1", action: "host", text: "Nhận gói tại Branch 1" },
+          ],
+        },
+        B2_to_B3: {
+          src: "H2_1",
+          dst: "H3_3",
+          steps: [
+            {
+              node: "admin1",
+              action: "host",
+              text: "Tạo ICMP/IP packet trong LAN Branch 2",
+            },
+            { node: "CE2", action: "lan", text: "Forward IP tới PE2" },
+            {
+              node: "PE2",
+              action: "push",
+              text: "Push outer 16003 + service 301",
+            },
+            {
+              node: "P4",
+              action: "php",
+              text: "PHP outer 16003, giữ service 301",
+            },
+            {
+              node: "PE3",
+              action: "pop",
+              text: "Pop service 301, đưa gói vào CE3",
+            },
+            { node: "dns1", action: "host", text: "Nhận gói tại Branch 3" },
+          ],
+        },
+        B3_to_B2: {
+          src: "H3_5",
+          dst: "H2_3",
+          steps: [
+            {
+              node: "db1",
+              action: "host",
+              text: "Tạo ICMP/IP packet trong LAN Branch 3",
+            },
+            { node: "CE3", action: "lan", text: "Forward IP tới PE3" },
+            {
+              node: "PE3",
+              action: "push",
+              text: "Push outer 16002 + service 201",
+            },
+            {
+              node: "P4",
+              action: "php",
+              text: "PHP outer 16002, giữ service 201",
+            },
+            {
+              node: "PE2",
+              action: "pop",
+              text: "Pop service 201, đưa gói vào CE2",
+            },
+            { node: "lab1", action: "host", text: "Nhận gói tại Branch 2" },
+          ],
+        },
+      };
+
+      // File candidates to load JSON results
+      const CANDIDATES = [
+        "/api/latest",
+        "mpls_results/latest.json",
+        "mpls_results/dashboard_data.json",
+        "dashboard_data.json",
+      ];
+
+      const CACHE_KEY = "mpls_dashboard_manual_cache_v24_compare_layout";
+      let DATA = { design: DESIGN };
+      let LAST_SOURCE = "";
+
+      // ============================================================
+      // UTILITY FUNCTIONS
+      // ============================================================
+
+      // Get element by ID
+      const $ = (id) => document.getElementById(id);
+
+      // Escape HTML special characters
+      const esc = (v) =>
+        String(v ?? "").replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[m],
+        );
+      // Mapping from Mininet host names to display names
+      const DISPLAY_NAME_MAP = {
+        H1_1: "host1",
+        H1_2: "host2",
+        H1_3: "host3",
+        H1_4: "host4",
+        H2_1: "admin1",
+        H2_2: "admin2",
+        H2_3: "lab1",
+        H2_4: "lab2",
+        H2_5: "guest1",
+        H2_6: "guest2",
+        H3_1: "web1",
+        H3_2: "web2",
+        H3_3: "dns1",
+        H3_4: "dns2",
+        H3_5: "db1",
+        H3_6: "db2",
+      };
+
+      // Replace Mininet names with display names in text
+      function displayName(v) {
+        let s = String(v ?? "");
+        Object.entries(DISPLAY_NAME_MAP).forEach(([raw, alias]) => {
+          s = s.replace(new RegExp("\\b" + raw + "\\b", "g"), alias);
+        });
+        return s;
+      }
+      function displayValue(v) {
+        return typeof v === "string" ? displayName(v) : v;
+      }
+      function labelFor(row) {
+        const raw =
+          row.label ||
+          (row.src && row.dst
+            ? `${row.src} -> ${row.dst}`
+            : row.name || "sample");
+        return displayName(raw);
+      }
+      function avg(rows, key) {
+        const vals = (rows || [])
+          .map((r) => Number(r[key]))
+          .filter(Number.isFinite);
+        return vals.length
+          ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(3)
+          : "N/A";
+      }
+      function metric(label, value) {
+        return `<div class="metric"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div></div>`;
+      }
+      function normalize(obj) {
+        obj = obj || {};
+        obj.design = obj.design || DESIGN;
+        if (!obj.design.project_title) obj.design = DESIGN;
+        return obj;
+      }
+      function isResult(obj) {
+        return Boolean(
+          obj &&
+          (obj.timestamp ||
+            (obj.ping || []).length +
+              (obj.tcp || []).length +
+              (obj.udp || []).length +
+              (obj.load || []).length >
+              0),
+        );
+      }
+      function cacheResult(obj, source) {
+        try {
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              source,
+              stored_at: new Date().toISOString(),
+              data: obj,
+            }),
+          );
+        } catch (e) {}
+      }
+      function loadCache() {
+        try {
+          const raw = localStorage.getItem(CACHE_KEY);
+          if (!raw) return false;
+          const wrap = JSON.parse(raw);
+          if (!wrap || !wrap.data) return false;
+          DATA = normalize(wrap.data);
+          LAST_SOURCE = wrap.source || "cached";
+          render();
+          $("status").textContent = "Đang dùng dữ liệu đã lưu";
+          $("status").className = "pill ok";
+          $("sourcePill").textContent = "Nguồn: " + LAST_SOURCE;
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      function clearCharts() {
+        [
+          "chartDelay",
+          "chartPingLoss",
+          "chartIntraDelay",
+          "chartTcp",
+          "chartIntraTcp",
+          "chartJitter",
+          "chartLoad",
+          "chartCompareDelay",
+          "chartCompareTcp",
+          "chartCompareJitter",
+          "chartCompareLoss",
+        ].forEach((id) => ($(id).innerHTML = ""));
+        $("connSummary").innerHTML = "";
+      }
+      // ============================================================
+      // DATA LOADING FUNCTIONS
+      // ============================================================
+
+      // Fetch JSON from URL with cache busting
+      async function fetchJson(url) {
+        const res = await fetch(url + "?t=" + Date.now(), {
+          cache: "no-store",
+        });
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+      }
+
+      // Reload result data from disk
+      async function reloadFromDisk() {
+        $("status").textContent = "Đang nạp dữ liệu...";
+        $("status").className = "pill warn";
+
+        for (const url of CANDIDATES) {
+          try {
+            const obj = normalize(await fetchJson(url));
+            if (!isResult(obj)) continue;
+
+            DATA = obj;
+            LAST_SOURCE = url;
+            cacheResult(obj, url);
+            render();
+
+            $("status").textContent = "Đã nạp dữ liệu thành công";
+            $("status").className = "pill ok";
+            $("sourcePill").textContent = "Nguồn: " + url;
+            return;
+          } catch (e) {
+            // Try next candidate
+          }
+        }
+
+        $("status").textContent =
+          "Không tìm thấy result JSON. Hãy chạy runall/runquick rồi bấm lại.";
+        $("status").className = "pill warn";
+        $("sourcePill").textContent = "Nguồn: chưa có";
+      }
+      function render() {
+        const o = DATA;
+        const d = DATA.design || DESIGN;
+        const s = o.analysis_summary || {};
+
+        // Render summary section with project title and metrics
+        $("summaryText").innerHTML = `
+    <b>${esc(d.project_title)}</b><br>
+    ${esc(displayName(d.topology_summary))}
+  `;
+
+        // Render 6 key metrics with proper formatting
+        $("metrics").innerHTML = [
+          metric("Backbone", o.backbone_mode || "mpls"),
+          metric("Delay avg", `${s.delay_avg_ms ?? avg(o.ping, "rtt_avg")} ms`),
+          metric(
+            "Ping loss avg",
+            `${s.ping_loss_avg_pct ?? avg(o.ping, "loss_pct")} %`,
+          ),
+          metric(
+            "TCP avg",
+            `${s.tcp_throughput_avg_mbps ?? avg(o.tcp, "throughput_mbps")} Mbps`,
+          ),
+          metric(
+            "UDP jitter avg",
+            `${s.udp_jitter_avg_ms ?? avg(o.udp, "jitter_ms")} ms`,
+          ),
+          metric(
+            "Load loss avg",
+            `${s.load_loss_avg_pct ?? avg(o.load, "lost_pct")} %`,
+          ),
+        ].join("");
+
+        // Render data state panel
+        $("dataState").innerHTML = [
+          metric("Nguồn dữ liệu", LAST_SOURCE || "chưa có"),
+          metric("Timestamp", o.timestamp || "N/A"),
+          metric("Report type", o.report_type || "N/A"),
+          metric(
+            "Cache trạng thái",
+            LAST_SOURCE ? "Đang giữ nguyên" : "Chưa có",
+          ),
+          metric("Có số liệu", isResult(o) ? "YES" : "NO"),
+          metric("Reload", "Thủ công"),
+        ].join("");
+
+        // Render all panels
+        renderOverview(d);
+        renderBranches(d.branches || []);
+        renderRequirements(d.assignment_requirements || []);
+        renderResults(o);
+        renderCompare(o);
+        renderFlow(o);
+        renderControl(o);
+      }
+      function renderOverview(d) {
+        const branchCards = (d.branches || [])
+          .map(
+            (b) => `
+      <div class="metric">
+        <div class="label">${esc(b.name)}</div>
+        <div class="value" style="font-size:18px">${esc(b.architecture)}</div>
+        <div class="small">${esc(displayName(b.routing))}</div>
+        <div class="branch-tags">
+          ${(b.subnets || [])
+            .map(
+              (s) =>
+                `<span class="pill">${esc(s.name)} ${esc(s.prefix)}</span>`,
+            )
+            .join("")}
+        </div>
+      </div>
+    `,
+          )
+          .join("");
+
+        $("overviewDesign").innerHTML = `
+    <div class="callout">
+      <b>Mục tiêu:</b> ${esc(displayName(d.topology_summary))}
+    </div>
+    <div class="divider"></div>
+    <div class="grid cols-3">${branchCards}</div>
+  `;
+
+        const rows = [
+          {
+            Kiến_trúc: "Flat Network",
+            Mô_tả: "Đơn giản, tất cả host cùng subnet, phù hợp branch nhỏ.",
+          },
+          {
+            Kiến_trúc: "Core / Distribution / Access",
+            Mô_tả:
+              "Mô hình campus 3 lớp, phù hợp thể hiện VLAN và inter-VLAN routing.",
+          },
+          {
+            Kiến_trúc: "Leaf-Spine",
+            Mô_tả:
+              "Mô hình data-center, dễ trình bày OSPF underlay và ECMP nhiều đường.",
+          },
+        ];
+
+        $("overviewCompare").innerHTML = table(rows);
+      }
+
+      function renderBranches(branches) {
+        $("branchDetails").innerHTML = branches
+          .map(
+            (b) => `
+      <div class="branch-card">
+        <h3>${esc(b.name)} — ${esc(b.architecture)}</h3>
+        <p class="small">${esc(displayName(b.purpose))}</p>
+        <p><b>Routing:</b> ${esc(displayName(b.routing))}</p>
+        <h4>Subnet</h4>
+        ${table(b.subnets || [])}
+        <h4>Ưu điểm</h4>
+        <ul class="list">
+          ${(b.advantages || []).map((x) => `<li>${esc(displayName(x))}</li>`).join("")}
+        </ul>
+        <h4>Lưu ý</h4>
+        <ul class="list">
+          ${(b.tradeoffs || []).map((x) => `<li>${esc(displayName(x))}</li>`).join("")}
+        </ul>
+        <h4>Lệnh gợi ý</h4>
+        <div class="chip-list">
+          ${(b.tests || []).map((x) => `<span class="kbd" data-copy="${esc(x)}">${esc(x)}</span>`).join(" ")}
+        </div>
+      </div>
+    `,
+          )
+          .join("");
+      }
+
+      function statusClass(status) {
+        status = String(status || "").toUpperCase();
+        if (status === "PASS") return "ok";
+        if (status === "FAIL") return "fail";
+        if (status === "WARN" || status === "WARNING") return "warn";
+        return "blue";
+      }
+      function renderManualRequirements(reqs) {
+        return (
+          `<div class="result-note">Chưa có dữ liệu kiểm chứng tự động. Hãy chạy <b>runall</b> hoặc <b>runquick</b>, sau đó bấm <b>Nạp lại dữ liệu</b>. Bên dưới là checklist lệnh để kiểm tra thủ công.</div>` +
+          reqs
+            .map(
+              (r) =>
+                `<div class="req-card"><div class="check-head"><div class="check-title"><span class="pill blue">${esc(r.id)}</span><h3>${esc(r.requirement)}</h3></div><span class="pill warn">CHƯA CHECK</span></div><p class="small"><b>Cách triển khai:</b> ${esc(displayName(r.implementation))}</p><p class="small"><b>Cách kiểm tra:</b> ${esc(displayName(r.note || "Chạy các lệnh bên dưới trong Mininet CLI."))}</p><div class="req-actions">${(r.evidence || []).map((cmd) => `<span class="kbd" data-copy="${esc(cmd)}">${esc(cmd)}</span>`).join("")}</div></div>`,
+            )
+            .join("")
+        );
+      }
+      function renderProofDetails(reqId) {
+        const proofs = (DATA.requirement_proofs || {})[reqId];
+        if (!proofs || !(proofs.items || []).length) return "";
+        return `<details class="proof-details"><summary>Xem bằng chứng lệnh đã thu từ runall</summary>${(proofs.items || []).map((item) => `<div style="margin-top:10px"><div class="small"><b>${esc(displayName(item.title || "Bằng chứng"))}</b> — <span class="kbd" data-copy="${esc(item.command || "")}">${esc(item.command || "")}</span></div><pre class="proof-output">${esc(displayName(item.output || "Không có output."))}</pre></div>`).join("")}</details>`;
+      }
+      function renderRequirements(reqs) {
+        const checks = DATA.requirement_checks || [];
+        if (!checks.length) {
+          $("reqList").innerHTML = renderManualRequirements(reqs);
+          return;
+        }
+        const summary = DATA.requirement_check_summary || {};
+        const pass =
+          summary.pass ??
+          checks.filter((c) => String(c.status).toUpperCase() === "PASS")
+            .length;
+        const warn =
+          summary.warn ??
+          checks.filter((c) => String(c.status).toUpperCase() === "WARN")
+            .length;
+        const fail =
+          summary.fail ??
+          checks.filter((c) => String(c.status).toUpperCase() === "FAIL")
+            .length;
+        const total = summary.total ?? checks.length;
+        const top = `<div class="check-summary"><div class="grid cols-3"><div class="metric"><div class="label">PASS</div><div class="value">${pass}/${total}</div></div><div class="metric"><div class="label">WARN</div><div class="value">${warn}</div></div><div class="metric"><div class="label">FAIL</div><div class="value">${fail}</div></div></div><p class="small">Checklist này được đọc từ JSON do <b>runner.py</b> ghi sau khi chạy <b>runall/runquick</b>. Các lệnh bên dưới vẫn có thể copy để kiểm tra lại thủ công trong Mininet CLI.</p></div>`;
+        $("reqList").innerHTML =
+          top +
+          checks
+            .map(
+              (c) =>
+                `<div class="req-card"><div class="check-head"><div class="check-title"><span class="pill blue">${esc(c.id)}</span><h3>${esc(displayName(c.name || c.requirement || "Yêu cầu"))}</h3></div><span class="pill ${statusClass(c.status)}">${esc(c.status || "UNKNOWN")}</span></div><p class="small">${esc(displayName(c.summary || "Không có tóm tắt."))}</p><div class="req-actions">${(c.evidence || []).map((cmd) => `<span class="kbd" data-copy="${esc(cmd)}">${esc(cmd)}</span>`).join("")}</div>${c.details ? `<div class="small" style="margin-top:10px"><b>Chi tiết:</b> ${esc(displayName(JSON.stringify(c.details)))}</div>` : ""}${renderProofDetails(c.id)}</div>`,
+            )
+            .join("");
+      }
+      function table(rows) {
+        if (!rows || !rows.length)
+          return '<p class="small">Không có dữ liệu.</p>';
+        const keys = [...new Set(rows.flatMap((r) => Object.keys(r)))];
+        return `<div class="table-wrap"><table><thead><tr>${keys.map((k) => `<th>${esc(prettifyKey(k))}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${keys.map((k) => `<td>${esc(displayValue(r[k]))}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+      }
+
+      function formatKvValue(value) {
+        if (value === null || value === undefined || value === "") return "N/A";
+        if (typeof value === "number") {
+          return Number.isInteger(value)
+            ? String(value)
+            : String(Number(value.toFixed(4)));
+        }
+        if (typeof value === "object")
+          return displayName(JSON.stringify(value));
+        return displayName(value);
+      }
+
+      function prettifyKey(key) {
+        return String(key || "")
+          .replaceAll("_", " ")
+          .replace(/\b(ms|mbps|pct|tcp|udp|mpls|ip)\b/gi, (m) =>
+            m.toUpperCase(),
+          )
+          .replace(/\bavg\b/gi, "AVG")
+          .replace(/\bminus\b/gi, "-")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function renderKvGrid(obj) {
+        if (!obj || typeof obj !== "object" || !Object.keys(obj).length) {
+          return '<div class="compare-empty">Chưa có dữ liệu.</div>';
+        }
+        return `
+    <div class="kv-grid">
+      ${Object.entries(obj)
+        .map(
+          ([key, value]) => `
+        <div class="kv-item">
+          <span class="kv-key">${esc(prettifyKey(key))}</span>
+          <span class="kv-value">${esc(formatKvValue(value))}</span>
+        </div>
+      `,
+        )
+        .join("")}
+    </div>
+  `;
+      }
+
+      function slim(rows, keys) {
+        return (rows || []).map((r) => {
+          const o = {};
+          keys.forEach((k) => {
+            if (r[k] !== undefined && r[k] !== null) o[k] = r[k];
+          });
+          if (!o.label) o.label = labelFor(r);
+          return o;
+        });
+      }
+      function chart(id, rows, valueKey, unit, color) {
+        const el = $(id);
+        rows = rows || [];
+        const data = rows
+          .map((r) => ({ label: labelFor(r), value: Number(r[valueKey]) }))
+          .filter((x) => Number.isFinite(x.value));
+        if (!data.length) {
+          el.innerHTML = '<p class="small">Chưa có dữ liệu.</p>';
+          return;
+        }
+        const rawMax = Math.max(...data.map((d) => d.value));
+        const max = rawMax <= 0 ? 1 : rawMax * 1.15;
+        const count = data.length;
+        const w = Math.max(620, count * 84);
+        const h = 280,
+          p = 46,
+          bw = 42;
+        let svg = `<text x="${p - 8}" y="18" text-anchor="end" font-size="11" fill="#64748b">${esc(unit)}</text>`;
+        for (let i = 0; i <= 4; i++) {
+          const y = p + ((h - p * 2) * i) / 4;
+          const val = max * (1 - i / 4);
+          svg += `<line x1="${p}" y1="${y}" x2="${w - p}" y2="${y}" stroke="#edf2f7"/><text x="${p - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#64748b">${val.toFixed(max < 10 ? 2 : 0)}</text>`;
+        }
+        data.forEach((d, i) => {
+          const x = p + 18 + i * 76,
+            bh = ((h - p * 2) * d.value) / max,
+            y = h - p - bh;
+          svg += `<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(bh, d.value > 0 ? 2 : 0)}" rx="8" fill="${color}"/><text x="${x + bw / 2}" y="${y - 6}" text-anchor="middle" font-size="11" fill="#334155">${d.value}</text><text transform="translate(${x + bw / 2},${h - 8}) rotate(-28)" text-anchor="end" font-size="10" fill="#64748b">${esc(d.label.slice(0, 24))}</text>`;
+        });
+        el.innerHTML = `<div style="overflow:auto"><svg viewBox="0 0 ${w} ${h}" width="100%"><line x1="${p}" y1="${h - p}" x2="${w - p}" y2="${h - p}" stroke="#cbd5e1"/><line x1="${p}" y1="${p}" x2="${p}" y2="${h - p}" stroke="#cbd5e1"/>${svg}</svg></div>`;
+      }
+      function loadRouteLabel(row) {
+        const raw = String(row.label || `${row.src || ""}->${row.dst || ""}`);
+        return displayName(
+          raw
+            .replace(/^Load\s+/, "")
+            .replace(/\s+at\s+\d+(\.\d+)?\s*Mbps$/, ""),
+        );
+      }
+      function chartLoadLoss(id, rows) {
+        const el = $(id);
+        rows = rows || [];
+        const data = rows
+          .map((r) => ({
+            route: loadRouteLabel(r),
+            load: Number(r.offered_load_mbps),
+            loss: Number(r.lost_pct),
+          }))
+          .filter((x) => Number.isFinite(x.load) && Number.isFinite(x.loss));
+        if (!data.length) {
+          el.innerHTML = '<p class="small">Chưa có dữ liệu.</p>';
+          return;
+        }
+        const routes = [...new Set(data.map((d) => d.route))];
+        const loads = [...new Set(data.map((d) => d.load))].sort(
+          (a, b) => a - b,
+        );
+        const minLoad = Math.min(...loads),
+          maxLoad = Math.max(...loads);
+        const rawMax = Math.max(...data.map((d) => d.loss), 0);
+        let yMax;
+        if (rawMax === 0) yMax = 1;
+        else if (rawMax < 0.25) yMax = 0.25;
+        else if (rawMax < 1) yMax = 1;
+        else yMax = Math.ceil(rawMax * 1.15);
+        const w = Math.max(680, loads.length * 100 + 180),
+          h = 310,
+          pL = 58,
+          pR = 28,
+          pT = 28,
+          pB = 68;
+        const xFor = (v) =>
+          maxLoad === minLoad
+            ? (pL + (w - pR)) / 2
+            : pL + ((v - minLoad) / (maxLoad - minLoad)) * (w - pL - pR);
+        const yFor = (v) => pT + ((yMax - v) / yMax) * (h - pT - pB);
+        const colors = [
+          "#ea580c",
+          "#2563eb",
+          "#16a34a",
+          "#7c3aed",
+          "#dc2626",
+          "#0891b2",
+        ];
+        let svg = "";
+        for (let i = 0; i <= 4; i++) {
+          const val = (yMax * i) / 4;
+          const y = yFor(val);
+          svg += `<line x1="${pL}" y1="${y}" x2="${w - pR}" y2="${y}" stroke="#edf2f7"/><text x="${pL - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#64748b">${val.toFixed(yMax <= 1 ? 2 : 0)}%</text>`;
+        }
+        loads.forEach((load) => {
+          const x = xFor(load);
+          svg += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${h - pB}" stroke="#f1f5f9"/><text x="${x}" y="${h - 40}" text-anchor="middle" font-size="11" fill="#64748b">${load}M</text>`;
+        });
+        routes.forEach((route, ri) => {
+          const pts = loads
+            .map((load) =>
+              data.find((d) => d.route === route && d.load === load),
+            )
+            .filter(Boolean)
+            .map((d) => [xFor(d.load), yFor(d.loss), d]);
+          const color = colors[ri % colors.length];
+          if (pts.length) {
+            svg += `<polyline points="${pts.map((p) => p[0] + "," + p[1]).join(" ")}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+          }
+          pts.forEach(([x, y, d]) => {
+            svg += `<circle cx="${x}" cy="${y}" r="4" fill="${color}"/><text x="${x}" y="${y - 8}" text-anchor="middle" font-size="10" fill="#334155">${d.loss.toFixed(d.loss < 1 ? 3 : 1)}%</text>`;
+          });
+        });
+        const legend = routes
+          .map(
+            (r, i) =>
+              `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:12px;margin-top:6px"><i style="width:18px;border-top:3px solid ${colors[i % colors.length]};display:inline-block"></i>${esc(r)}</span>`,
+          )
+          .join("");
+        el.innerHTML = `<div style="overflow:auto"><svg viewBox="0 0 ${w} ${h}" width="100%"><line x1="${pL}" y1="${h - pB}" x2="${w - pR}" y2="${h - pB}" stroke="#cbd5e1"/><line x1="${pL}" y1="${pT}" x2="${pL}" y2="${h - pB}" stroke="#cbd5e1"/>${svg}<text x="${w - pR}" y="20" text-anchor="end" font-size="12" fill="#64748b">Packet loss (%) theo offered load</text></svg></div><div class="small" style="margin-top:6px">${legend}</div>`;
+      }
+
+      function renderInsightBlocks(o) {
+        const s = o.analysis_summary || {};
+        const insights = s.performance_insights || [];
+        const ip = s.ip_vs_mpls || {};
+        const comparison = ip.comparison || [];
+        const insightHtml = insights.length
+          ? `<div class="callout"><h3 style="margin-top:0">Nhận xét tự động từ số liệu runall</h3><ul class="list">${insights.map((x) => `<li>${esc(displayName(x))}</li>`).join("")}</ul></div>`
+          : "";
+        const ipHtml = comparison.length
+          ? `<div class="callout"><h3 style="margin-top:0">Đối chiếu MPLS và IP routing truyền thống</h3><p class="small">${esc(ip.note || "Mục này là phân tích lý thuyết bổ sung cho đề bài; số đo runtime hiện tại chạy ở chế độ MPLS.")}</p>${table(comparison)}</div>`
+          : "";
+        return insightHtml + ipHtml;
+      }
+      function renderResults(o) {
+        const has = isResult(o);
+        const noticeText = has
+          ? "Dữ liệu bên dưới là kết quả đã nạp gần nhất và sẽ được giữ nguyên cho đến khi bạn bấm Nạp lại dữ liệu."
+          : "Chưa có dữ liệu kết quả. Hãy chạy runall hoặc runquick, sau đó bấm Nạp lại dữ liệu.";
+        $("resultNotice").textContent = noticeText;
+
+        if (!has) {
+          clearCharts();
+          $("tables").innerHTML = '<p class="small">Chưa có bảng số liệu.</p>';
+          $("connSummary").innerHTML = "";
+          return;
+        }
+
+        // Generate all charts
+        chart("chartDelay", o.ping, "rtt_avg", "ms", "#7c3aed");
+        chart("chartPingLoss", o.ping, "loss_pct", "%", "#ef4444");
+        chart(
+          "chartIntraDelay",
+          o.intra_ping || [],
+          "rtt_avg",
+          "ms",
+          "#0891b2",
+        );
+        chart("chartTcp", o.tcp, "throughput_mbps", "Mbps", "#2563eb");
+        chart(
+          "chartIntraTcp",
+          o.intra || [],
+          "throughput_mbps",
+          "Mbps",
+          "#0f766e",
+        );
+        chart("chartJitter", o.udp, "jitter_ms", "ms", "#16a34a");
+        chartLoadLoss("chartLoad", o.load);
+
+        // Build connectivity summary
+        const connRows = [];
+        if (o.connectivity) {
+          Object.entries(o.connectivity).forEach(([k, v]) => {
+            connRows.push({
+              test: v.display_label || k,
+              status: v.ok ? "OK" : "FAIL",
+              rtt_ms: v.rtt_avg ?? v.rtt_avg_ms ?? "N/A",
+              loss_pct: v.loss_pct ?? "N/A",
+            });
+          });
+        }
+        $("connSummary").innerHTML = connRows.length
+          ? table(connRows)
+          : '<p class="small">Không có connectivity summary.</p>';
+
+        // Render all data tables
+        $("tables").innerHTML = `
+    ${renderInsightBlocks(o)}
+    <h3>Ping delay/loss liên chi nhánh</h3>
+    ${table(slim(o.ping, ["label", "src", "dst", "rtt_avg", "loss_pct"]))}
+    <h3>Delay nội bộ từng chi nhánh</h3>
+    ${table(slim(o.intra_ping || [], ["label", "src", "dst", "rtt_avg", "loss_pct"]))}
+    <h3>TCP throughput liên chi nhánh</h3>
+    ${table(slim(o.tcp, ["label", "src", "dst", "throughput_mbps", "retransmits"]))}
+    <h3>TCP throughput nội bộ</h3>
+    ${table(slim(o.intra || [], ["label", "src", "dst", "throughput_mbps", "retransmits"]))}
+    <h3>UDP jitter</h3>
+    ${table(slim(o.udp, ["label", "src", "dst", "jitter_ms", "lost_pct"]))}
+    <h3>Load test</h3>
+    ${table(slim(o.load, ["label", "offered_load_mbps", "throughput_mbps", "jitter_ms", "lost_pct"]))}
+  `;
+      }
+
+      function renderCompare(o) {
+        const c = o.compare || {};
+        const available = Boolean(c.available);
+        const notice = $("compareNotice");
+        const summaryEl = $("compareSummary");
+        const tablesEl = $("compareTables");
+
+        if (!available) {
+          notice.innerHTML =
+            "Chưa có dữ liệu so sánh MPLS/IP. Hãy chạy <b>runall</b>, sau đó bấm <b>Nạp lại dữ liệu</b>. File latest.json mới sẽ chứa trường <code>compare</code>.";
+          summaryEl.innerHTML = [
+            metric("Trạng thái", "Chưa có compare"),
+            metric("Nguồn", "runall"),
+            metric("JSON", "latest.json"),
+          ].join("");
+          [
+            "chartCompareDelay",
+            "chartCompareTcp",
+            "chartCompareJitter",
+            "chartCompareLoss",
+          ].forEach(
+            (id) => ($(id).innerHTML = '<p class="small">Chưa có dữ liệu.</p>'),
+          );
+          tablesEl.innerHTML =
+            '<div class="compare-empty">Tab này sẽ tự có dữ liệu sau khi runall hoàn tất phần IP routing baseline.</div>';
+          return;
+        }
+
+        const s = c.comparison_summary || {};
+        const mplsSummary = (c.mpls || {}).summary || {};
+        const ipSummary = (c.ip || {}).summary || {};
+        const notes = (c.notes || []).length
+          ? (c.notes || [])
+              .map((x) => `<li>${esc(displayName(x))}</li>`)
+              .join("")
+          : "<li>Chưa có nhận xét tự động trong JSON.</li>";
+
+        notice.innerHTML =
+          "Dữ liệu so sánh được sinh tự động bởi <b>runall</b>: cùng topology, cùng host/link và cùng bộ test; chỉ khác cơ chế forwarding MPLS label switching và IP routing baseline.";
+
+        summaryEl.innerHTML = [
+          metric("MPLS mode", "PASS"),
+          metric("IP baseline", "PASS"),
+          metric("Cùng topology", c.same_topology ? "YES" : "N/A"),
+          metric(
+            "Delay Δ IP-MPLS",
+            `${s.delay_delta_ip_minus_mpls_ms ?? "N/A"} ms`,
+          ),
+          metric(
+            "TCP Δ IP-MPLS",
+            `${s.tcp_delta_ip_minus_mpls_mbps ?? "N/A"} Mbps`,
+          ),
+          metric(
+            "Loss Δ IP-MPLS",
+            `${s.loss_delta_ip_minus_mpls_pct ?? "N/A"} %`,
+          ),
+        ].join("");
+
+        chart(
+          "chartCompareDelay",
+          [
+            { label: "MPLS", value: s.delay_mpls_avg_ms },
+            { label: "IP Routing", value: s.delay_ip_avg_ms },
+          ],
+          "value",
+          "ms",
+          "#7c3aed",
+        );
+        chart(
+          "chartCompareTcp",
+          [
+            { label: "MPLS", value: s.tcp_mpls_avg_mbps },
+            { label: "IP Routing", value: s.tcp_ip_avg_mbps },
+          ],
+          "value",
+          "Mbps",
+          "#2563eb",
+        );
+        chart(
+          "chartCompareJitter",
+          [
+            { label: "MPLS", value: s.jitter_mpls_avg_ms },
+            { label: "IP Routing", value: s.jitter_ip_avg_ms },
+          ],
+          "value",
+          "ms",
+          "#16a34a",
+        );
+        chart(
+          "chartCompareLoss",
+          [
+            { label: "MPLS", value: s.loss_mpls_avg_pct },
+            { label: "IP Routing", value: s.loss_ip_avg_pct },
+          ],
+          "value",
+          "%",
+          "#ea580c",
+        );
+
+        tablesEl.innerHTML = `
+    <div class="compare-block">
+      <div>
+        <h3>Bảng so sánh cơ chế chuyển tiếp</h3>
+        ${table(c.mechanism_comparison || [])}
+      </div>
+
+      <div>
+        <h3>Thông số tổng hợp</h3>
+        ${renderKvGrid(s)}
+      </div>
+
+      <div class="callout compare-note">
+        <h3 style="margin-top:0">Nhận xét</h3>
+        <ul class="list">${notes}</ul>
+      </div>
+
+      <div>
+        <h3>Dữ liệu MPLS</h3>
+        ${renderKvGrid(mplsSummary)}
+      </div>
+
+      <div>
+        <h3>Dữ liệu IP Routing</h3>
+        ${renderKvGrid(ipSummary)}
+      </div>
+    </div>
+  `;
+      }
+
+      function actionPill(action) {
+        const a = String(action || "").toLowerCase();
+        if (a === "push") return "purple";
+        if (a === "swap") return "blue";
+        if (a === "php") return "warn";
+        if (a === "pop") return "ok";
+        return "blue";
+      }
+      function currentFlowKey() {
+        const src = $("flowSrc")?.value || "branch1";
+        const dst = $("flowDst")?.value || "branch2";
+        return FLOW_KEYS[`${src}_${dst}`] || "B1_to_B2";
+      }
+      function setFlowDstOptions() {
+        const src = $("flowSrc")?.value || "branch1";
+        const dst = $("flowDst");
+        if (!dst) return;
+        const old = dst.value;
+        dst.innerHTML = FLOW_BRANCHES.filter((b) => b.id !== src)
+          .map((b) => `<option value="${esc(b.id)}">${esc(b.label)}</option>`)
+          .join("");
+        if (old && old !== src && FLOW_BRANCHES.some((b) => b.id === old))
+          dst.value = old;
+      }
+      function flowTraceFor(key) {
+        const traces = DATA.trace_samples || {};
+        return traces[key] || FLOW_FALLBACKS[key] || FLOW_FALLBACKS.B1_to_B2;
+      }
+      function renderFlowSteps(trace) {
+        const steps = trace.steps || [];
+        return `<div class="flow-step-list">${steps
+          .map(
+            (st, i) => `
+    <div class="flow-step">
+      <div class="idx">#${String(i + 1).padStart(2, "0")}</div>
+      <div class="node">${esc(displayName(st.node || ""))}</div>
+      <div><span class="pill ${actionPill(st.action)}">${esc(String(st.action || "").toUpperCase())}</span><div class="small" style="margin-top:6px">${esc(displayName(st.text || st.action || ""))}</div></div>
+    </div>`,
+          )
+          .join("")}</div>`;
+      }
+      function renderFlowProofs(proof) {
+        if (!proof) {
+          return `<div class="flow-empty"><b>Chưa có tcpdump/hex dump trong JSON.</b><br>Trong Mininet CLI hãy chạy <span class="kbd" data-copy="runquick">runquick</span> hoặc <span class="kbd" data-copy="runall">runall</span>, sau đó bấm <b>Nạp lại dữ liệu</b>. Nếu muốn chụp thủ công, dùng lệnh dạng: <span class="kbd" data-copy="PE1 tcpdump -i pe1-p1 -nn -e -vv -XX -c 3 'mpls or icmp'">PE1 tcpdump -i pe1-p1 -nn -e -vv -XX -c 3 'mpls or icmp'</span></div>`;
+        }
+        const rows = (proof.captures || []).map((c) => ({
+          stage: c.stage,
+          node: c.node,
+          interface: c.interface,
+          action: c.expected_action,
+          expected: c.expected_label_stack || c.expected_ethertype,
+          labels_seen: (c.labels_seen || []).join(", ") || "N/A",
+          hex_dump: c.has_hex ? "YES" : "NO",
+          mpls: c.has_mpls ? "YES" : "NO",
+        }));
+        const okCount = (proof.captures || []).filter(
+          (c) =>
+            c.has_hex &&
+            (c.has_mpls || String(c.expected_action).toLowerCase() === "pop"),
+        ).length;
+        const summaryClass = okCount ? "flow-proof-ok" : "flow-proof-warn";
+        return `<div class="flow-stage ${summaryClass}">
+    <h4>Minh chứng tcpdump/hex dump</h4>
+    <p class="small"><b>Tóm tắt:</b> ${esc(displayName(proof.summary || "Đọc các capture bên dưới để đối chiếu nhãn."))}</p>
+    ${table(rows)}
+  </div>
+  ${(proof.captures || [])
+    .map(
+      (c, idx) => `
+    <details class="proof-details">
+      <summary>${esc(c.stage || "Capture " + (idx + 1))} — ${esc(c.node)}:${esc(c.interface)} — ${esc(c.expected_action || "")}</summary>
+      <div class="small" style="margin-top:8px"><b>Lệnh:</b> <span class="kbd" data-copy="${esc(c.command || "")}">${esc(c.command || "")}</span></div>
+      <pre class="flow-output">${esc(displayName(c.output || "Không có output tcpdump."))}</pre>
+    </details>`,
+    )
+    .join("")}`;
+      }
+      function renderSelectedFlow() {
+        const key = currentFlowKey();
+        const trace = flowTraceFor(key);
+        const proof = (DATA.tcpdump_label_proofs || {})[key];
+        const mode = trace.mode || DATA.backbone_mode || "mpls";
+        $("flowNotice").innerHTML =
+          `Đang xem luồng <b>${esc(displayName(trace.src || ""))}</b> → <b>${esc(displayName(trace.dst || ""))}</b>, mode <b>${esc(String(mode).toUpperCase())}</b>. Phần trace mô tả logic label switching; phần tcpdump là bằng chứng gói tin thật nếu JSON đã có.`;
+        $("flowContent").innerHTML = `
+    <div class="flow-grid">
+      <div>
+        <div class="flow-stage">
+          <h4>1) Luồng di chuyển qua PE/P</h4>
+          ${renderFlowSteps(trace)}
+        </div>
+        <div class="flow-stage">
+          <h4>2) Cách đọc nhãn trong Hex Dump</h4>
+          <p class="small">Trong tcpdump, frame MPLS thường có EtherType <b>0x8847</b>. Dòng decode sẽ hiện <b>label 16001/16002/16003</b> cho transport label và <b>101/201/301</b> cho service label. Khi đến P gần PE đích, transport label bị PHP nên capture gần PE đích thường chỉ còn service label. Sau PE egress, gói về CE không còn MPLS mà quay lại IPv4/ICMP.</p>
+        </div>
+      </div>
+      <div>${renderFlowProofs(proof)}</div>
+    </div>`;
+      }
+      function renderFlow(o) {
+        const controls = $("flowControls");
+        if (!controls) return;
+        controls.innerHTML = `
+    <label>Branch nguồn<select id="flowSrc">${FLOW_BRANCHES.map((b) => `<option value="${esc(b.id)}">${esc(b.label)}</option>`).join("")}</select></label>
+    <label>Branch đích<select id="flowDst"></select></label>
+    <button id="flowRunBtn" class="primary" type="button">Chạy mô tả luồng</button>
+    <span class="kbd" data-copy="runquick">runquick</span>
+    <span class="kbd" data-copy="runall">runall</span>`;
+        setFlowDstOptions();
+        $("flowSrc").addEventListener("change", () => {
+          setFlowDstOptions();
+          renderSelectedFlow();
+        });
+        $("flowDst").addEventListener("change", renderSelectedFlow);
+        $("flowRunBtn").addEventListener("click", renderSelectedFlow);
+        renderSelectedFlow();
+      }
+
+      function renderControl(o) {
+        const snap = {
+          analysis_summary: o.analysis_summary || null,
+          requirement_check_summary: o.requirement_check_summary || null,
+          requirement_checks: o.requirement_checks || null,
+          mpls_health: o.mpls_health || null,
+          mpls_tables: o.mpls_tables || null,
+          ecmp_routes: o.ecmp_routes || null,
+          connectivity: o.connectivity || null,
+          trace_samples: o.trace_samples || null,
+          tcpdump_label_proofs: o.tcpdump_label_proofs || null,
+          compare: o.compare || null,
+        };
+        $("snap").textContent = JSON.stringify(snap, null, 2);
+      }
+
+      function copyText(text) {
+        navigator.clipboard
+          ?.writeText(text)
+          .then(() => {
+            $("status").textContent = "Đã copy lệnh";
+            $("status").className = "pill ok";
+          })
+          .catch(() => {});
+      }
+
+      // ============================================================
+      // EVENT LISTENERS & INITIALIZATION
+      // ============================================================
+
+      // Tab switching
+      document.querySelectorAll(".tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll(".tab")
+            .forEach((x) => x.classList.remove("active"));
+          document
+            .querySelectorAll(".panel")
+            .forEach((x) => x.classList.remove("active"));
+          btn.classList.add("active");
+          $(btn.dataset.tab).classList.add("active");
+        });
+      });
+
+      // Copy to clipboard on [data-copy] click
+      document.body.addEventListener("click", (ev) => {
+        const el = ev.target.closest("[data-copy]");
+        if (el) copyText(el.getAttribute("data-copy"));
+      });
+
+      // Reload button
+      $("reloadBtn").addEventListener("click", reloadFromDisk);
+
+      // Clear cache button
+      $("clearCache").addEventListener("click", () => {
+        try {
+          localStorage.removeItem(CACHE_KEY);
+        } catch (e) {}
+        DATA = { design: DESIGN };
+        LAST_SOURCE = "";
+        render();
+        $("status").textContent = "Đã xóa dữ liệu lưu";
+        $("status").className = "pill warn";
+        $("sourcePill").textContent = "Nguồn: chưa có";
+      });
+
+      // File upload handler
+      $("file").addEventListener("change", async (ev) => {
+        const f = ev.target.files[0];
+        if (!f) return;
+        try {
+          const obj = normalize(JSON.parse(await f.text()));
+          if (!isResult(obj)) {
+            $("status").textContent = "File này không phải result JSON.";
+            $("status").className = "pill warn";
+            return;
+          }
+          DATA = obj;
+          LAST_SOURCE = f.name;
+          cacheResult(obj, f.name);
+          render();
+          $("status").textContent = "Đã nạp thủ công và lưu lại";
+          $("status").className = "pill ok";
+          $("sourcePill").textContent = "Nguồn: " + f.name;
+        } catch (e) {
+          $("status").textContent = "Lỗi JSON: " + e.message;
+          $("status").className = "pill warn";
+        }
+      });
+
+      // Initialize on page load
+      render();
+      loadCache();
+    </script>
+  </body>
+</html>

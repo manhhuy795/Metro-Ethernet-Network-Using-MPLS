@@ -1,0 +1,400 @@
+{
+  "project_title": "Metro Ethernet MAN sử dụng MPLS cho kết nối đa chi nhánh doanh nghiệp",
+  "version": "v20-dashboard-lock",
+  "topology_summary": "ISP MPLS backbone PE1/PE2/PE3 + P1/P2/P3/P4 kết nối CE1/CE2/CE3 và 3 LAN kiến trúc khác nhau.",
+  "assignment_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Kết nối nhiều chi nhánh qua Metro Ethernet MPLS backbone",
+      "implementation": "CE1/CE2/CE3 nối PE1/PE2/PE3; P1-P4 là provider core; LFIB MPLS và label service 101/201/301.",
+      "evidence": [
+        "P1 v show mpls ldp binding",
+        "P1 v show mpls ldp neighbor",
+        "P1 ip -f mpls route"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Chi nhánh 1 Flat Network",
+      "implementation": "H1_1..H1_4 chung 192.168.10.0/24, gateway CE1 192.168.10.1, OVS flat1.",
+      "evidence": [
+        "H1_1 ping -c 2 192.168.10.14"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Chi nhánh 2 Core-Distribution-Access",
+      "implementation": "core1, dist1/dist2, access1/access2/access3; VLAN 10/20/30; CE2 router-on-a-stick.",
+      "evidence": [
+        "core1 ovs-vsctl show",
+        "CE2 sh -c \"ip -brief addr show | grep ce2-lan\"",
+        "CE2 ip route",
+        "CE2 v show ip route",
+        "H2_1 ping -c 2 192.168.21.11"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Chi nhánh 3 Leaf-Spine",
+      "implementation": "spine1/spine2 nối leaf1/leaf2/leaf3; OSPF underlay; spine/CE3 có ECMP nexthop weight 1.",
+      "evidence": [
+        "spine1 v show ip ospf neighbor",
+        "spine1 v show ip ospf route",
+        "CE3 v show ip route",
+        "spine1 ip route"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "REQ-5",
+      "requirement": "Router P/PE/CE, Switch và Host trên Mininet",
+      "implementation": "Topology.py dựng P, PE, CE, OVS switch và host theo sơ đồ logic.",
+      "evidence": [
+        "sudo python3 topology.py"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "REQ-6",
+      "requirement": "Bảng hiệu năng Throughput, Delay, Packet loss, Jitter",
+      "implementation": "runner.py sinh JSON ping/tcp/udp/load; dashboard tự nạp và hiển thị bảng/biểu đồ.",
+      "evidence": [
+        "runquick",
+        "runall",
+        "dash 8000",
+        "http://127.0.0.1:8000/api/latest"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "REQ-7",
+      "requirement": "Phân tích label switching và đường đi gói tin MPLS",
+      "implementation": "trace_mpls_path và dashboard hiển thị push/swap/PHP/pop, LDP binding, LFIB và trace_samples.",
+      "evidence": [
+        "trace H1_1 H2_1",
+        "P1 v show mpls ldp binding"
+      ],
+      "status": "implemented"
+    },
+    {
+      "id": "REQ-8",
+      "requirement": "So sánh MPLS với IP Routing truyền thống",
+      "implementation": "Lệnh runall chạy cùng bộ kiểm thử ở MPLS mode và IP routing baseline, sau đó gộp kết quả vào cùng latest.json trong trường compare.",
+      "evidence": [
+        "runall",
+        "dash 8000"
+      ],
+      "note": "Dashboard tab So sánh MPLS/IP hiển thị delay, throughput, jitter và packet loss của hai cơ chế forwarding trong một lần nạp JSON."
+    }
+  ],
+  "provider_design": {
+    "name": "ISP MPLS Backbone",
+    "nodes": [
+      "PE1",
+      "PE2",
+      "PE3",
+      "P1",
+      "P2",
+      "P3",
+      "P4"
+    ],
+    "protocols": [
+      "OSPF area 0 trong core",
+      "LDP/LFIB MPLS visibility",
+      "GRETAP VPLS demo bridge br-vpls"
+    ],
+    "labels": {
+      "branch1": "transport 16001, service 101",
+      "branch2": "transport 16002, service 201",
+      "branch3": "transport 16003, service 301"
+    },
+    "backbone_subnet_naming_convention": {
+      "summary": "Backbone dùng dải 10.255.x.0/30 cho các liên kết point-to-point trong vùng ISP/MPLS. Giá trị x là mã liên kết, không phải số thứ tự subnet ngẫu nhiên.",
+      "rules": [
+        {
+          "pattern": "10.0.1X.0/30",
+          "meaning": "WAN CE-X <-> PE-X, ví dụ CE1-PE1 = 10.0.11.0/30, CE2-PE2 = 10.0.12.0/30."
+        },
+        {
+          "pattern": "10.255.<PE><P>.0/30",
+          "meaning": "Liên kết PE-P, ví dụ PE1-P1 = 10.255.11.0/30, PE2-P4 = 10.255.24.0/30, PE3-P4 = 10.255.34.0/30."
+        },
+        {
+          "pattern": "10.255.12.0/30 và 10.255.14.0/30",
+          "meaning": "Liên kết P1-P2 và P1-P4, không trùng với liên kết PE-P nên dùng mã cặp trực tiếp."
+        },
+        {
+          "pattern": "10.255.103.0/30",
+          "meaning": "Liên kết P1-P3. Không dùng 10.255.13.0/30 vì dải đó đã dành cho PE1-P3."
+        },
+        {
+          "pattern": "10.255.203.0/30",
+          "meaning": "Liên kết P2-P3. Không dùng 10.255.23.0/30 vì dải đó đã dành cho PE2-P3."
+        },
+        {
+          "pattern": "10.255.204.0/30",
+          "meaning": "Liên kết P2-P4. Không dùng 10.255.24.0/30 vì dải đó đã dành cho PE2-P4."
+        },
+        {
+          "pattern": "10.255.43.0/30",
+          "meaning": "Liên kết P3-P4. Không dùng 10.255.34.0/30 vì dải đó đã dành cho PE3-P4, nên dùng mã đảo 43 để tránh trùng."
+        }
+      ],
+      "note": "Các subnet 10.255.103/203/204/43 là các mã tránh trùng trong backbone, được ghi chú để người đọc không hiểu nhầm là lỗi đặt địa chỉ. Cấu hình IP, route và LFIB phải giữ đồng nhất với topology.py."
+    },
+    "backbone_ip_links": [
+      {
+        "link": "CE1-PE1",
+        "prefix": "10.0.11.0/30",
+        "note": "WAN khách hàng chi nhánh 1"
+      },
+      {
+        "link": "CE2-PE2",
+        "prefix": "10.0.12.0/30",
+        "note": "WAN khách hàng chi nhánh 2"
+      },
+      {
+        "link": "CE3-PE3",
+        "prefix": "10.0.13.0/30",
+        "note": "WAN khách hàng chi nhánh 3"
+      },
+      {
+        "link": "PE1-P1",
+        "prefix": "10.255.11.0/30",
+        "note": "PE-P"
+      },
+      {
+        "link": "P1-P2",
+        "prefix": "10.255.12.0/30",
+        "note": "P-P"
+      },
+      {
+        "link": "PE1-P3",
+        "prefix": "10.255.13.0/30",
+        "note": "PE-P"
+      },
+      {
+        "link": "P1-P4",
+        "prefix": "10.255.14.0/30",
+        "note": "P-P"
+      },
+      {
+        "link": "PE2-P3",
+        "prefix": "10.255.23.0/30",
+        "note": "PE-P"
+      },
+      {
+        "link": "PE2-P4",
+        "prefix": "10.255.24.0/30",
+        "note": "PE-P"
+      },
+      {
+        "link": "PE3-P2",
+        "prefix": "10.255.32.0/30",
+        "note": "PE-P"
+      },
+      {
+        "link": "PE3-P4",
+        "prefix": "10.255.34.0/30",
+        "note": "PE-P"
+      },
+      {
+        "link": "P3-P4",
+        "prefix": "10.255.43.0/30",
+        "note": "P-P, dùng 43 để tránh trùng 34 của PE3-P4"
+      },
+      {
+        "link": "P1-P3",
+        "prefix": "10.255.103.0/30",
+        "note": "P-P, dùng 103 để tránh trùng 13 của PE1-P3"
+      },
+      {
+        "link": "P2-P3",
+        "prefix": "10.255.203.0/30",
+        "note": "P-P, dùng 203 để tránh trùng 23 của PE2-P3"
+      },
+      {
+        "link": "P2-P4",
+        "prefix": "10.255.204.0/30",
+        "note": "P-P, dùng 204 để tránh trùng 24 của PE2-P4"
+      }
+    ]
+  },
+  "branches": [
+    {
+      "id": "branch1",
+      "name": "Chi nhánh 1",
+      "architecture": "Flat Network",
+      "purpose": "Baseline LAN phẳng.",
+      "nodes": [
+        "CE1",
+        "flat1",
+        "H1_1",
+        "H1_2",
+        "H1_3",
+        "H1_4"
+      ],
+      "subnets": [
+        {
+          "name": "Flat LAN",
+          "prefix": "192.168.10.0/24",
+          "gateway": "192.168.10.1",
+          "hosts": "H1_1-H1_4"
+        }
+      ],
+      "routing": "Host default gateway CE1; CE1 đi PE1; PE1 dùng service label 101.",
+      "advantages": [
+        "Đơn giản",
+        "Độ trễ thấp nội bộ",
+        "Dễ kiểm thử baseline"
+      ],
+      "tradeoffs": [
+        "Broadcast domain lớn",
+        "Ít phân tách lưu lượng"
+      ],
+      "tests": [
+        "trace H1_1 H2_1",
+        "H1_1 ping H2_1"
+      ]
+    },
+    {
+      "id": "branch2",
+      "name": "Chi nhánh 2",
+      "architecture": "Core - Distribution - Access",
+      "purpose": "Campus LAN 3 lớp có VLAN và định tuyến liên VLAN.",
+      "nodes": [
+        "CE2",
+        "core1",
+        "dist1",
+        "dist2",
+        "access1",
+        "access2",
+        "access3",
+        "H2_1-H2_6"
+      ],
+      "subnets": [
+        {
+          "name": "VLAN 10 Admin",
+          "prefix": "192.168.20.0/24",
+          "gateway": "192.168.20.1",
+          "hosts": "H2_1,H2_2"
+        },
+        {
+          "name": "VLAN 20 Lab",
+          "prefix": "192.168.21.0/24",
+          "gateway": "192.168.21.1",
+          "hosts": "H2_3,H2_4"
+        },
+        {
+          "name": "VLAN 30 Guest",
+          "prefix": "192.168.22.0/24",
+          "gateway": "192.168.22.1",
+          "hosts": "H2_5,H2_6"
+        }
+      ],
+      "routing": "OVS trunk/access VLAN; CE2 subinterface ce2-lan.10/.20/.30 gateway; CE2 đi PE2.",
+      "advantages": [
+        "Phân tách VLAN rõ",
+        "Dễ mở rộng theo tầng",
+        "Có OVS trunk/access để kiểm định"
+      ],
+      "tradeoffs": [
+        "Đường đi nội bộ dài hơn Flat",
+        "CE2 là điểm routing liên VLAN"
+      ],
+      "tests": [
+        "b2addr",
+        "b2route",
+        "b2test",
+        "ovs core1"
+      ]
+    },
+    {
+      "id": "branch3",
+      "name": "Chi nhánh 3",
+      "architecture": "Leaf-Spine",
+      "purpose": "Fabric 2 lớp có OSPF và ECMP.",
+      "nodes": [
+        "CE3",
+        "spine1",
+        "spine2",
+        "leaf1",
+        "leaf2",
+        "leaf3",
+        "H3_1-H3_6"
+      ],
+      "subnets": [
+        {
+          "name": "Web",
+          "prefix": "192.168.30.0/24",
+          "gateway": "192.168.30.1",
+          "hosts": "H3_1,H3_2",
+          "leaf": "leaf1"
+        },
+        {
+          "name": "DNS",
+          "prefix": "192.168.31.0/24",
+          "gateway": "192.168.31.1",
+          "hosts": "H3_3,H3_4",
+          "leaf": "leaf2"
+        },
+        {
+          "name": "DB",
+          "prefix": "192.168.32.0/24",
+          "gateway": "192.168.32.1",
+          "hosts": "H3_5,H3_6",
+          "leaf": "leaf3"
+        }
+      ],
+      "routing": "CE3, spine và leaf chạy OSPF; ECMP qua spine1/spine2; CE3 đi PE3.",
+      "advantages": [
+        "Nhiều đường song song",
+        "Dễ mở rộng leaf",
+        "ECMP hiển thị bằng nexthop weight 1"
+      ],
+      "tradeoffs": [
+        "Cấu hình định tuyến nhiều hơn",
+        "Debug khó hơn flat LAN"
+      ],
+      "tests": [
+        "ospfnbr spine1",
+        "ospfrt spine1",
+        "route CE3",
+        "iproute spine1"
+      ]
+    }
+  ],
+  "tools": {
+    "mininet_shortcuts": [
+      "verify",
+      "runquick",
+      "runall",
+      "json",
+      "dash 8000",
+      "dashstop",
+      "names",
+      "vsh P1 show mpls ldp binding",
+      "vsh P1 show mpls ldp neighbor",
+      "P1 ip -f mpls route",
+      "spine1 v show ip ospf neighbor",
+      "spine1 v show ip ospf route",
+      "CE3 v show ip route",
+      "spine1 ip route",
+      "CE2 sh -c \"ip -brief addr show | grep ce2-lan\"",
+      "CE2 ip route",
+      "CE2 v show ip route",
+      "H2_1 ping -c 2 192.168.21.11",
+      "PE1 ip link show type gretap",
+      "PE1 bridge fdb show dev br-vpls",
+      "core1 ovs-vsctl show"
+    ]
+  },
+  "dashboard_behavior": {
+    "reload_policy": "Dashboard loads a real result JSON once, stores it in localStorage, and does not reload until the user clicks Nap lai du lieu.",
+    "latest_endpoint": "/api/latest returns only real runquick/runall/json output, never network_design.json.",
+    "debug_endpoint": "/api/files shows which JSON files are valid result files."
+  }
+}
