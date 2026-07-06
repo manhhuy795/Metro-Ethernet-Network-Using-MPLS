@@ -365,3 +365,13 @@ sudo mn -c
 - Các file trong `mpls_results/` là output sinh tự động sau khi chạy lab.
 - `dashboard_data.json` ở thư mục gốc được dùng như dữ liệu mẫu để dashboard có thể demo nhanh.
 - Nếu thay đổi subnet backbone, cần đồng bộ trong topology, route, LFIB/MPLS và dashboard metadata.
+pyenv install -l | grep "  3.12"
+pyenv install 3.12.8
+pyenv shell 3.12.8
+
+python -m venv ~/ryu312-venv
+source ~/ryu312-venv/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install ryu pyyaml
+
+ryu-manager --version
